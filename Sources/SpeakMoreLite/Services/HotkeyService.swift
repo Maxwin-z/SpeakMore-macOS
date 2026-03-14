@@ -258,10 +258,16 @@ class HotkeyService {
         let config = currentConfig
 
         if event.type == .keyDown {
-            guard !isCustomKeyDown,
-                  event.keyCode == config.keyCode,
-                  modifiersMatch(event.modifierFlags, expected: NSEvent.ModifierFlags(rawValue: UInt(config.modifierFlags)))
-            else { return }
+            guard !isCustomKeyDown, event.keyCode == config.keyCode else { return }
+
+            // Check generic modifier types
+            guard modifiersMatch(event.modifierFlags, expected: NSEvent.ModifierFlags(rawValue: UInt(config.modifierFlags))) else { return }
+
+            // Check left/right distinction if device mask is configured
+            if config.modifierDeviceMask != 0 {
+                let eventRawFlags = event.modifierFlags.rawValue
+                guard (eventRawFlags & config.modifierDeviceMask) == config.modifierDeviceMask else { return }
+            }
 
             isCustomKeyDown = true
             onHotkeyDown?()
@@ -274,7 +280,13 @@ class HotkeyService {
 
         } else if event.type == .flagsChanged {
             if isCustomKeyDown && config.modifierFlags != 0 {
-                if !modifiersMatch(event.modifierFlags, expected: NSEvent.ModifierFlags(rawValue: UInt(config.modifierFlags))) {
+                if config.modifierDeviceMask != 0 {
+                    let eventRawFlags = event.modifierFlags.rawValue
+                    if (eventRawFlags & config.modifierDeviceMask) != config.modifierDeviceMask {
+                        isCustomKeyDown = false
+                        onHotkeyUp?()
+                    }
+                } else if !modifiersMatch(event.modifierFlags, expected: NSEvent.ModifierFlags(rawValue: UInt(config.modifierFlags))) {
                     isCustomKeyDown = false
                     onHotkeyUp?()
                 }
@@ -349,10 +361,16 @@ class HotkeyService {
         let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
 
         if type == .keyDown {
-            guard !isCustomKeyDown,
-                  keyCode == config.keyCode,
-                  cgModifiersMatch(event.flags, expected: config.modifierFlags)
-            else { return }
+            guard !isCustomKeyDown, keyCode == config.keyCode else { return }
+
+            // Check generic modifier types first
+            guard cgModifiersMatch(event.flags, expected: config.modifierFlags) else { return }
+
+            // Check left/right distinction if device mask is configured
+            if config.modifierDeviceMask != 0 {
+                let eventRawFlags = UInt(event.flags.rawValue)
+                guard (eventRawFlags & config.modifierDeviceMask) == config.modifierDeviceMask else { return }
+            }
 
             isCustomKeyDown = true
             onHotkeyDown?()
@@ -365,7 +383,13 @@ class HotkeyService {
 
         } else if type == .flagsChanged {
             if isCustomKeyDown && config.modifierFlags != 0 {
-                if !cgModifiersMatch(event.flags, expected: config.modifierFlags) {
+                if config.modifierDeviceMask != 0 {
+                    let eventRawFlags = UInt(event.flags.rawValue)
+                    if (eventRawFlags & config.modifierDeviceMask) != config.modifierDeviceMask {
+                        isCustomKeyDown = false
+                        onHotkeyUp?()
+                    }
+                } else if !cgModifiersMatch(event.flags, expected: config.modifierFlags) {
                     isCustomKeyDown = false
                     onHotkeyUp?()
                 }

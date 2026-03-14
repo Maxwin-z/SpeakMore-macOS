@@ -7,6 +7,9 @@ import Carbon.HIToolbox
 struct HotkeyConfig: Codable, Equatable {
     let keyCode: UInt16
     let modifierFlags: UInt
+    /// NX device masks for left/right modifier distinction in combo hotkeys.
+    /// 0 means no left/right distinction (backward compatible).
+    let modifierDeviceMask: UInt
     let isFnKey: Bool
     let isModifierOnly: Bool
     let displayString: String
@@ -19,12 +22,29 @@ struct HotkeyConfig: Codable, Equatable {
         displayString: "FN"
     )
 
-    init(keyCode: UInt16, modifierFlags: UInt, isFnKey: Bool, isModifierOnly: Bool = false, displayString: String) {
+    init(keyCode: UInt16, modifierFlags: UInt, modifierDeviceMask: UInt = 0, isFnKey: Bool, isModifierOnly: Bool = false, displayString: String) {
         self.keyCode = keyCode
         self.modifierFlags = modifierFlags
+        self.modifierDeviceMask = modifierDeviceMask
         self.isFnKey = isFnKey
         self.isModifierOnly = isModifierOnly
         self.displayString = displayString
+    }
+
+    // MARK: - Custom Codable (backward compatible)
+
+    enum CodingKeys: String, CodingKey {
+        case keyCode, modifierFlags, modifierDeviceMask, isFnKey, isModifierOnly, displayString
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        keyCode = try container.decode(UInt16.self, forKey: .keyCode)
+        modifierFlags = try container.decode(UInt.self, forKey: .modifierFlags)
+        modifierDeviceMask = try container.decodeIfPresent(UInt.self, forKey: .modifierDeviceMask) ?? 0
+        isFnKey = try container.decode(Bool.self, forKey: .isFnKey)
+        isModifierOnly = try container.decodeIfPresent(Bool.self, forKey: .isModifierOnly) ?? false
+        displayString = try container.decode(String.self, forKey: .displayString)
     }
 
     // MARK: - Persistence
@@ -186,4 +206,40 @@ func buildHotkeyDisplayString(keyCode: UInt16, modifiers: NSEvent.ModifierFlags)
         return keyStr
     }
     return "\(modStr) \(keyStr)"
+}
+
+/// Converts NX device mask to display symbols with left/right distinction.
+/// Order follows macOS convention: ⌃ ⌥ ⇧ ⌘
+func deviceMaskToSymbols(_ mask: UInt) -> String {
+    var parts: [String] = []
+    if mask & NXDeviceMask.leftControl  != 0 { parts.append("左⌃") }
+    if mask & NXDeviceMask.rightControl != 0 { parts.append("右⌃") }
+    if mask & NXDeviceMask.leftOption   != 0 { parts.append("左⌥") }
+    if mask & NXDeviceMask.rightOption  != 0 { parts.append("右⌥") }
+    if mask & NXDeviceMask.leftShift    != 0 { parts.append("左⇧") }
+    if mask & NXDeviceMask.rightShift   != 0 { parts.append("右⇧") }
+    if mask & NXDeviceMask.leftCommand  != 0 { parts.append("左⌘") }
+    if mask & NXDeviceMask.rightCommand != 0 { parts.append("右⌘") }
+    return parts.joined(separator: " ")
+}
+
+/// Builds hotkey display string with left/right modifier distinction.
+func buildHotkeyDisplayStringWithDeviceMask(keyCode: UInt16, deviceMask: UInt) -> String {
+    let modStr = deviceMaskToSymbols(deviceMask)
+    let keyStr = keyCodeToString(keyCode)
+    if modStr.isEmpty {
+        return keyStr
+    }
+    return "\(modStr) \(keyStr)"
+}
+
+/// Returns modifier keyCodes sorted in macOS display order: ⌃ ⌥ ⇧ ⌘
+func sortedModifierKeyCodes(_ keyCodes: Set<UInt16>) -> [UInt16] {
+    let order: [UInt16] = [
+        UInt16(kVK_Control), UInt16(kVK_RightControl),
+        UInt16(kVK_Option), UInt16(kVK_RightOption),
+        UInt16(kVK_Shift), UInt16(kVK_RightShift),
+        UInt16(kVK_Command), UInt16(kVK_RightCommand),
+    ]
+    return order.filter { keyCodes.contains($0) }
 }
