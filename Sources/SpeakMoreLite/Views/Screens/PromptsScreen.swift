@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PromptsScreen: View {
     @EnvironmentObject var promptStore: PromptStore
+    @StateObject private var contextService = ContextProfileService.shared
     @State private var newTerm = ""
     @State private var isAddingAppPrompt = false
     @State private var newAppName = ""
@@ -19,6 +20,9 @@ struct PromptsScreen: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
+
+                // MARK: - Context Preview
+                ContextPreviewSection(contextService: contextService)
 
                 // MARK: - Glossary
                 glossarySection
