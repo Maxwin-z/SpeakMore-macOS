@@ -10,7 +10,7 @@ set -euo pipefail
 # --- 配置 ---
 APP_NAME="SpeakMoreLite"
 DISPLAY_NAME="SpeakMore Lite"
-SCHEME="SpeakMoreLite"
+TARGET="SpeakMoreLite"
 BUNDLE_ID="cn.byutech.SpeakMoreLite"
 TEAM_ID="BS4GBZN537"
 SIGN_IDENTITY="Developer ID Application: Shanghai Baiyu Information Technology Company Limited (BS4GBZN537)"
@@ -19,8 +19,6 @@ KEYCHAIN_PROFILE="SpeakMoreLite-Notary"
 # --- 目录 ---
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="${PROJECT_DIR}/build"
-ARCHIVE_PATH="${BUILD_DIR}/${APP_NAME}.xcarchive"
-EXPORT_DIR="${BUILD_DIR}/export"
 DMG_STAGING="${BUILD_DIR}/dmg-staging"
 
 # --- 版本号 ---
@@ -39,54 +37,34 @@ echo ""
 
 # --- Step 1: 清理 ---
 echo "▶ [1/6] 清理旧构建..."
-rm -rf "${ARCHIVE_PATH}" "${EXPORT_DIR}" "${DMG_STAGING}" "${DMG_PATH}"
+rm -rf "${DMG_STAGING}" "${DMG_PATH}"
 
-# --- Step 2: Archive ---
-echo "▶ [2/6] Archive 构建..."
-xcodebuild archive \
+# --- Step 2: 构建 Release ---
+echo "▶ [2/6] 构建 Release..."
+xcodebuild build \
     -project "${PROJECT_DIR}/${APP_NAME}.xcodeproj" \
-    -scheme "${SCHEME}" \
+    -target "${TARGET}" \
     -configuration Release \
-    -archivePath "${ARCHIVE_PATH}" \
+    SYMROOT="${BUILD_DIR}" \
     DEVELOPMENT_TEAM="${TEAM_ID}" \
-    CODE_SIGN_STYLE="Manual" \
-    CODE_SIGN_IDENTITY="${SIGN_IDENTITY}" \
-    OTHER_CODE_SIGN_FLAGS="--options=runtime" \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
     MARKETING_VERSION="${VERSION}" \
     -quiet
 
-echo "  ✓ Archive 完成"
+APP_PATH="${BUILD_DIR}/Release/${APP_NAME}.app"
+echo "  ✓ 构建完成: ${APP_PATH}"
 
-# --- Step 3: 导出 App ---
-echo "▶ [3/6] 导出 App..."
+# --- Step 3: 签名（Developer ID + Hardened Runtime）---
+echo "▶ [3/6] 代码签名..."
 
-# 创建 ExportOptions.plist
-EXPORT_OPTIONS="${BUILD_DIR}/ExportOptions.plist"
-cat > "${EXPORT_OPTIONS}" << PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>method</key>
-    <string>developer-id</string>
-    <key>teamID</key>
-    <string>${TEAM_ID}</string>
-    <key>signingStyle</key>
-    <string>manual</string>
-    <key>signingCertificate</key>
-    <string>Developer ID Application</string>
-</dict>
-</plist>
-PLIST
+# 对 App 内所有可执行文件和框架递归签名
+codesign --force --deep --options runtime \
+    --entitlements "${PROJECT_DIR}/${APP_NAME}.entitlements" \
+    --sign "${SIGN_IDENTITY}" \
+    "${APP_PATH}"
 
-xcodebuild -exportArchive \
-    -archivePath "${ARCHIVE_PATH}" \
-    -exportPath "${EXPORT_DIR}" \
-    -exportOptionsPlist "${EXPORT_OPTIONS}" \
-    -quiet
-
-APP_PATH="${EXPORT_DIR}/${APP_NAME}.app"
-echo "  ✓ 导出完成: ${APP_PATH}"
+echo "  ✓ 签名完成"
 
 # --- Step 4: 验证签名 ---
 echo "▶ [4/6] 验证代码签名..."
@@ -146,4 +124,4 @@ echo ""
 echo "可直接上传到 GitHub Releases，用户下载后不会再出现安全警告。"
 
 # 清理临时文件
-rm -rf "${DMG_STAGING}" "${EXPORT_OPTIONS}" "${ARCHIVE_PATH}"
+rm -rf "${DMG_STAGING}"
