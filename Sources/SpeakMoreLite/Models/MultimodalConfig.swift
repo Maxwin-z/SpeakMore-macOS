@@ -12,9 +12,9 @@ enum MultimodalProvider: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .gemini: return "Google Gemini"
-        case .dashscope: return "通义千问 (DashScope)"
+        case .dashscope: return L("provider.dashscope")
         case .openrouter: return "OpenRouter"
-        case .custom: return "自定义 (OpenAI 兼容)"
+        case .custom: return L("provider.custom")
         }
     }
 
@@ -40,21 +40,30 @@ enum MultimodalProvider: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .gemini:
             return [
-                MultimodalModel(id: "gemini-2.5-flash", displayName: "Gemini 2.5 Flash", description: "高性价比，推荐使用"),
-                MultimodalModel(id: "gemini-2.5-pro", displayName: "Gemini 2.5 Pro", description: "最强性能"),
-                MultimodalModel(id: "gemini-2.0-flash", displayName: "Gemini 2.0 Flash", description: "快速稳定"),
+                MultimodalModel(id: "gemini-2.5-flash", displayName: "Gemini 2.5 Flash",
+                                description: L("model.cost_effective")),
+                MultimodalModel(id: "gemini-2.5-pro", displayName: "Gemini 2.5 Pro",
+                                description: L("model.best_performance")),
+                MultimodalModel(id: "gemini-2.0-flash", displayName: "Gemini 2.0 Flash",
+                                description: L("model.fast_stable")),
             ]
         case .dashscope:
             return [
-                MultimodalModel(id: "qwen-omni-turbo", displayName: "Qwen Omni Turbo", description: "快速，支持中英文"),
-                MultimodalModel(id: "qwen3-omni-flash", displayName: "Qwen3 Omni Flash", description: "最新一代，效果更好"),
-                MultimodalModel(id: "qwen2.5-omni-7b", displayName: "Qwen2.5 Omni 7B", description: "开源模型"),
+                MultimodalModel(id: "qwen-omni-turbo", displayName: "Qwen Omni Turbo",
+                                description: L("model.fast_bilingual")),
+                MultimodalModel(id: "qwen3-omni-flash", displayName: "Qwen3 Omni Flash",
+                                description: L("model.latest_gen")),
+                MultimodalModel(id: "qwen2.5-omni-7b", displayName: "Qwen2.5 Omni 7B",
+                                description: L("model.open_source")),
             ]
         case .openrouter:
             return [
-                MultimodalModel(id: "google/gemini-2.5-flash", displayName: "Gemini 2.5 Flash", description: "通过 OpenRouter 使用"),
-                MultimodalModel(id: "google/gemini-2.5-pro", displayName: "Gemini 2.5 Pro", description: "最强性能"),
-                MultimodalModel(id: "google/gemini-2.0-flash-001", displayName: "Gemini 2.0 Flash", description: "快速稳定"),
+                MultimodalModel(id: "google/gemini-2.5-flash", displayName: "Gemini 2.5 Flash",
+                                description: L("model.via_openrouter")),
+                MultimodalModel(id: "google/gemini-2.5-pro", displayName: "Gemini 2.5 Pro",
+                                description: L("model.best_performance")),
+                MultimodalModel(id: "google/gemini-2.0-flash-001", displayName: "Gemini 2.0 Flash",
+                                description: L("model.fast_stable")),
             ]
         case .custom:
             return []
@@ -108,19 +117,19 @@ enum ContextLevel: Int, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .none: return "无上下文"
-        case .realtime: return "ID 上下文"
-        case .shortTerm: return "短期上下文"
-        case .longTerm: return "长期上下文"
+        case .none: return L("context_level.none")
+        case .realtime: return L("context_level.realtime")
+        case .shortTerm: return L("context_level.short_term")
+        case .longTerm: return L("context_level.long_term")
         }
     }
 
     var description: String {
         switch self {
-        case .none: return "仅基础转写指令"
-        case .realtime: return "加入来源应用信息"
-        case .shortTerm: return "加入近期话题和词汇"
-        case .longTerm: return "加入用户画像和长期偏好"
+        case .none: return L("context_level.none_desc")
+        case .realtime: return L("context_level.realtime_desc")
+        case .shortTerm: return L("context_level.short_term_desc")
+        case .longTerm: return L("context_level.long_term_desc")
         }
     }
 }

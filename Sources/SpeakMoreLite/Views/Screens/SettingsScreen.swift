@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsScreen: View {
     @EnvironmentObject var appViewModel: AppViewModel
     @EnvironmentObject var multimodalStore: MultimodalConfigStore
+    @ObservedObject private var lang = LanguageManager.shared
     @State private var currentHotkeyDisplay = "FN"
     @State private var isRecordingHotkey = false
     @State private var apiKeyVisible = false
@@ -10,9 +11,12 @@ struct SettingsScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("设置")
+                Text(lang.s("settings.title"))
                     .font(.largeTitle.bold())
                     .padding(.bottom, 4)
+
+                // MARK: - Language
+                languageSection
 
                 // MARK: - Permissions
                 permissionsSection
@@ -31,6 +35,21 @@ struct SettingsScreen: View {
         }
     }
 
+    // MARK: - Language Section
+
+    private var languageSection: some View {
+        GroupBox {
+            Picker(lang.s("settings.interface_language"), selection: $lang.language) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.displayName).tag(language)
+                }
+            }
+            .pickerStyle(.menu)
+        } label: {
+            Label(lang.s("settings.language"), systemImage: "globe")
+        }
+    }
+
     // MARK: - Permissions Section
 
     private var permissionsSection: some View {
@@ -38,10 +57,10 @@ struct SettingsScreen: View {
             VStack(spacing: 10) {
                 PermissionRow(
                     icon: "hand.raised.fill",
-                    title: "辅助功能权限",
-                    description: "需要此权限来监听快捷键和自动输入文字",
+                    title: lang.s("settings.accessibility_permission"),
+                    description: lang.s("settings.accessibility_desc"),
                     isGranted: appViewModel.isAccessibilityGranted,
-                    actionTitle: "授权"
+                    actionTitle: lang.s("settings.authorize")
                 ) {
                     appViewModel.requestAccessibilityPermission()
                 }
@@ -51,17 +70,17 @@ struct SettingsScreen: View {
 
                     PermissionRow(
                         icon: "keyboard",
-                        title: "Fn 键设置",
-                        description: "请将系统设置 → 键盘 → Fn 键设为「不执行任何操作」",
+                        title: lang.s("settings.fn_key_setup"),
+                        description: lang.s("settings.fn_key_desc"),
                         isGranted: appViewModel.isFnKeyConfigured,
-                        actionTitle: "打开键盘设置"
+                        actionTitle: lang.s("settings.open_keyboard_settings")
                     ) {
                         appViewModel.openKeyboardSettings()
                     }
                 }
             }
         } label: {
-            Label("权限状态", systemImage: "shield.checkered")
+            Label(lang.s("settings.permission_status"), systemImage: "shield.checkered")
         }
     }
 
@@ -85,13 +104,13 @@ struct SettingsScreen: View {
                     Image(systemName: "info.circle")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text("按住快捷键开始录音，松开结束")
+                    Text(lang.s("settings.hotkey_hint"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
         } label: {
-            Label("快捷键", systemImage: "command.square")
+            Label(lang.s("settings.hotkey"), systemImage: "command.square")
         }
     }
 
@@ -101,7 +120,7 @@ struct SettingsScreen: View {
         GroupBox {
             VStack(alignment: .leading, spacing: 14) {
                 // Provider selection
-                Picker("服务商", selection: $multimodalStore.config.provider) {
+                Picker(lang.s("settings.provider"), selection: $multimodalStore.config.provider) {
                     ForEach(MultimodalProvider.allCases) { provider in
                         Label(provider.displayName, systemImage: provider.icon)
                             .tag(provider)
@@ -128,10 +147,10 @@ struct SettingsScreen: View {
                     HStack(spacing: 8) {
                         Group {
                             if apiKeyVisible {
-                                TextField("输入 API Key…", text: $multimodalStore.config.apiKey)
+                                TextField(lang.s("settings.api_key_placeholder"), text: $multimodalStore.config.apiKey)
                                     .textFieldStyle(.roundedBorder)
                             } else if multimodalStore.config.apiKey.isEmpty {
-                                TextField("输入 API Key…", text: $multimodalStore.config.apiKey)
+                                TextField(lang.s("settings.api_key_placeholder"), text: $multimodalStore.config.apiKey)
                                     .textFieldStyle(.roundedBorder)
                             } else {
                                 Text(maskedApiKey(multimodalStore.config.apiKey))
@@ -157,7 +176,7 @@ struct SettingsScreen: View {
 
                 // API Endpoint
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("API 地址")
+                    Text(lang.s("settings.api_endpoint"))
                         .font(.subheadline.weight(.medium))
 
                     TextField("https://…", text: $multimodalStore.config.endpoint)
@@ -170,13 +189,13 @@ struct SettingsScreen: View {
 
                 // Custom model ID
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("自定义模型 ID")
+                    Text(lang.s("settings.custom_model_id"))
                         .font(.subheadline.weight(.medium))
-                    Text("留空则使用上方选择的模型")
+                    Text(lang.s("settings.custom_model_hint"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    TextField("例如: gemini-2.5-flash-preview", text: $multimodalStore.config.customModelId)
+                    TextField(lang.s("settings.custom_model_placeholder"), text: $multimodalStore.config.customModelId)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(.body, design: .monospaced))
                 }
@@ -188,14 +207,14 @@ struct SettingsScreen: View {
                     Image(systemName: multimodalStore.isConfigured ? "checkmark.circle.fill" : "exclamationmark.circle")
                         .foregroundStyle(multimodalStore.isConfigured ? .green : .orange)
                     Text(multimodalStore.isConfigured
-                         ? "已配置，语音将通过 \(multimodalStore.config.provider.displayName) 处理"
-                         : "请输入 API Key 以启用语音转写")
+                         ? String(format: lang.s("settings.configured_fmt"), multimodalStore.config.provider.displayName)
+                         : lang.s("settings.enter_api_key"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
             }
         } label: {
-            Label("多模态 API", systemImage: "waveform.badge.magnifyingglass")
+            Label(lang.s("settings.multimodal_api"), systemImage: "waveform.badge.magnifyingglass")
         }
     }
 
@@ -213,7 +232,7 @@ struct SettingsScreen: View {
         let models = multimodalStore.config.provider.defaultModels
         if !models.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("模型")
+                Text(lang.s("settings.model"))
                     .font(.subheadline.weight(.medium))
 
                 ForEach(models) { model in
@@ -310,6 +329,7 @@ struct HotkeyRecorderView: View {
     @Binding var isRecording: Bool
     var onHotkeyRecorded: (HotkeyConfig) -> Void
     var onResetToDefault: () -> Void
+    @ObservedObject private var lang = LanguageManager.shared
 
     @State private var pulseOpacity: Double = 1.0
     @State private var pendingModifiers: String = ""
@@ -324,7 +344,7 @@ struct HotkeyRecorderView: View {
             HStack(spacing: 6) {
                 if isRecording {
                     if pendingModifiers.isEmpty {
-                        Text("请按下快捷键...")
+                        Text(lang.s("settings.press_hotkey"))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.blue)
                             .opacity(pulseOpacity)
@@ -371,7 +391,7 @@ struct HotkeyRecorderView: View {
             )
 
             // Record button
-            Button(isRecording ? "取消" : "录制快捷键") {
+            Button(isRecording ? lang.s("settings.cancel") : lang.s("settings.record_hotkey")) {
                 if isRecording {
                     stopRecording()
                 } else {
@@ -383,7 +403,7 @@ struct HotkeyRecorderView: View {
 
             // Reset button
             if currentDisplay != "FN" && !isRecording {
-                Button("恢复默认") {
+                Button(lang.s("settings.reset_default")) {
                     currentDisplay = "FN"
                     onResetToDefault()
                 }

@@ -23,9 +23,9 @@ struct RealtimeContext {
 
     var summary: String {
         var parts: [String] = []
-        if let app = appName { parts.append("应用: \(app)") }
-        if let title = windowTitle { parts.append("窗口: \(title)") }
-        if let path = documentPath { parts.append("文档: \(path)") }
-        return parts.isEmpty ? "无" : parts.joined(separator: "，")
+        if let app = appName { parts.append("\(L("prompt.env_app")): \(app)") }
+        if let title = windowTitle { parts.append("\(L("prompt.env_window")): \(title)") }
+        if let path = documentPath { parts.append("\(L("prompt.env_document")): \(path)") }
+        return parts.isEmpty ? L("prompt.env_none") : parts.joined(separator: L("prompt.separator"))
     }
 }

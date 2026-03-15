@@ -3,6 +3,7 @@ import CoreData
 
 struct HistoryScreen: View {
     @StateObject private var historyStore = HistoryStore.shared
+    @ObservedObject private var lang = LanguageManager.shared
     @State private var selectedId: NSManagedObjectID?
 
     var body: some View {
@@ -27,7 +28,7 @@ struct HistoryScreen: View {
     private var historyList: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("录音记录")
+                Text(lang.s("history.recordings"))
                     .font(.headline)
                 Spacer()
                 Text("\(historyStore.recordings.count)")
@@ -47,10 +48,10 @@ struct HistoryScreen: View {
                     Image(systemName: "waveform.slash")
                         .font(.title)
                         .foregroundStyle(.tertiary)
-                    Text("暂无录音记录")
+                    Text(lang.s("history.no_recordings"))
                         .font(.subheadline)
                         .foregroundStyle(.tertiary)
-                    Text("按住快捷键开始录音")
+                    Text(lang.s("history.hold_hotkey"))
                         .font(.caption)
                         .foregroundStyle(.quaternary)
                 }
@@ -65,7 +66,7 @@ struct HistoryScreen: View {
                                 NSPasteboard.general.clearContents()
                                 NSPasteboard.general.setString(text, forType: .string)
                             } label: {
-                                Label("复制文本", systemImage: "doc.on.doc")
+                                Label(lang.s("history.copy_text"), systemImage: "doc.on.doc")
                             }
 
                             Divider()
@@ -76,7 +77,7 @@ struct HistoryScreen: View {
                                 }
                                 historyStore.deleteRecording(recording)
                             } label: {
-                                Label("删除", systemImage: "trash")
+                                Label(lang.s("history.delete"), systemImage: "trash")
                             }
                         }
                 }
@@ -90,7 +91,7 @@ struct HistoryScreen: View {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.largeTitle)
                 .foregroundStyle(.tertiary)
-            Text("选择一条记录查看详情")
+            Text(lang.s("history.select_record"))
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
         }
@@ -104,6 +105,7 @@ private struct HistoryDetailView: View {
     let recording: Recording
     @ObservedObject var historyStore: HistoryStore
     @Binding var selectedId: NSManagedObjectID?
+    @ObservedObject private var lang = LanguageManager.shared
 
     @StateObject private var multimodalStore = MultimodalConfigStore.shared
     @State private var selectedModel: AvailableModel?
@@ -182,7 +184,7 @@ private struct HistoryDetailView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(recording.title ?? "无标题")
+            Text(recording.title ?? lang.s("history.untitled"))
                 .font(.title2.weight(.semibold))
                 .lineLimit(2)
 
@@ -266,7 +268,7 @@ private struct HistoryDetailView: View {
                 .padding(4)
             } label: {
                 HStack {
-                    Text("转写内容")
+                    Text(lang.s("history.transcription"))
                     Spacer()
                     if let model = recording.sttModelName {
                         Text(model)
@@ -279,7 +281,7 @@ private struct HistoryDetailView: View {
             if let userEdited = recording.userEditedText, !userEdited.isEmpty,
                let original = recording.originalText, !original.isEmpty,
                userEdited != original {
-                GroupBox("原始转写") {
+                GroupBox(lang.s("history.original")) {
                     VStack(alignment: .leading) {
                         Text(original)
                             .font(.body)
@@ -301,7 +303,7 @@ private struct HistoryDetailView: View {
         return Group {
             if !results.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("重新识别记录")
+                    Text(lang.s("history.re_recognition_history"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
 
@@ -319,7 +321,7 @@ private struct HistoryDetailView: View {
                         HStack(spacing: 6) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text("正在识别...")
+                            Text(lang.s("history.recognizing"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -333,7 +335,7 @@ private struct HistoryDetailView: View {
                     }
                     .padding(4)
                 } label: {
-                    Text("识别中...")
+                    Text(lang.s("history.recognizing"))
                 }
             }
         }
@@ -348,15 +350,15 @@ private struct HistoryDetailView: View {
             VStack(alignment: .leading, spacing: 14) {
                 // Model picker
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("选择模型")
+                    Text(lang.s("history.select_model"))
                         .font(.subheadline.weight(.medium))
 
                     if models.isEmpty {
-                        Text("请先在设置中配置 API Key")
+                        Text(lang.s("history.configure_api"))
                             .font(.caption)
                             .foregroundStyle(.orange)
                     } else {
-                        Picker("模型", selection: $selectedModel) {
+                        Picker(lang.s("settings.model"), selection: $selectedModel) {
                             ForEach(models) { model in
                                 Text(model.displayName)
                                     .tag(Optional(model))
@@ -370,7 +372,7 @@ private struct HistoryDetailView: View {
                 // Context level slider
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("上下文级别")
+                        Text(lang.s("history.context_level"))
                             .font(.subheadline.weight(.medium))
                         Spacer()
                         Text(contextLevel.displayName)
@@ -424,7 +426,7 @@ private struct HistoryDetailView: View {
                 } label: {
                     HStack {
                         Image(systemName: "arrow.clockwise")
-                        Text("重新识别")
+                        Text(lang.s("history.re_recognize"))
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -433,7 +435,7 @@ private struct HistoryDetailView: View {
                 .disabled(selectedModel == nil || historyStore.isReRecognizing || models.isEmpty)
             }
         } label: {
-            Label("重新识别", systemImage: "arrow.triangle.2.circlepath")
+            Label(lang.s("history.re_recognize"), systemImage: "arrow.triangle.2.circlepath")
         }
     }
 
@@ -447,7 +449,7 @@ private struct HistoryDetailView: View {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(displayText, forType: .string)
             } label: {
-                Label("复制文本", systemImage: "doc.on.doc")
+                Label(lang.s("history.copy_text"), systemImage: "doc.on.doc")
             }
             .buttonStyle(.bordered)
 
@@ -457,7 +459,7 @@ private struct HistoryDetailView: View {
                 selectedId = nil
                 historyStore.deleteRecording(recording)
             } label: {
-                Label("删除", systemImage: "trash")
+                Label(lang.s("history.delete"), systemImage: "trash")
             }
             .buttonStyle(.bordered)
         }
@@ -486,11 +488,11 @@ private struct HistoryDetailView: View {
                 let durationStr = String(format: "%.1f", recording.durationSeconds)
                 let rule: String = {
                     if recording.durationSeconds >= 45 {
-                        return "\(durationStr)s ≥ 45s → 全部上下文"
+                        return String(format: lang.s("history.full_context_fmt"), durationStr)
                     } else if recording.durationSeconds >= 15 {
-                        return "\(durationStr)s ≥ 15s → 基础 + 近期上下文"
+                        return String(format: lang.s("history.base_recent_fmt"), durationStr)
                     } else {
-                        return "\(durationStr)s < 15s → 仅基础上下文"
+                        return String(format: lang.s("history.base_only_fmt"), durationStr)
                     }
                 }()
                 Text(rule)
@@ -514,7 +516,7 @@ private struct HistoryDetailView: View {
             }
             .padding(4)
         } label: {
-            Label("上下文层级", systemImage: "square.3.layers.3d")
+            Label(lang.s("history.context_layers"), systemImage: "square.3.layers.3d")
         }
     }
 
@@ -551,7 +553,7 @@ private struct HistoryDetailView: View {
         if calendar.isDateInToday(date) {
             formatter.dateFormat = "HH:mm"
         } else if calendar.isDateInYesterday(date) {
-            return "昨天"
+            return lang.s("history.yesterday")
         } else {
             formatter.dateFormat = "MM/dd"
         }
@@ -710,7 +712,7 @@ private struct RecordingRow: View {
         if calendar.isDateInToday(date) {
             formatter.dateFormat = "HH:mm"
         } else if calendar.isDateInYesterday(date) {
-            return "昨天"
+            return L("history.yesterday")
         } else {
             formatter.dateFormat = "MM/dd"
         }

@@ -3,6 +3,7 @@ import SwiftUI
 struct PromptsScreen: View {
     @EnvironmentObject var promptStore: PromptStore
     @StateObject private var contextService = ContextProfileService.shared
+    @ObservedObject private var lang = LanguageManager.shared
     @State private var newTerm = ""
     @State private var isAddingAppPrompt = false
     @State private var newAppName = ""
@@ -16,9 +17,9 @@ struct PromptsScreen: View {
             VStack(alignment: .leading, spacing: 20) {
                 // Title
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("AI增强")
+                    Text(lang.s("prompts.title"))
                         .font(.largeTitle.bold())
-                    Text("自定义转写指令与术语表，提升识别准确性。术语表具有最高优先级。")
+                    Text(lang.s("prompts.subtitle"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -48,17 +49,17 @@ struct PromptsScreen: View {
     private var glossarySection: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 12) {
-                Text("添加品牌名、技术术语等，确保转写时使用指定写法。")
+                Text(lang.s("prompts.glossary_desc"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 // Input
                 HStack(spacing: 8) {
-                    TextField("输入术语…", text: $newTerm)
+                    TextField(lang.s("prompts.enter_term"), text: $newTerm)
                         .textFieldStyle(.roundedBorder)
                         .onSubmit { addTerm() }
 
-                    Button("添加") { addTerm() }
+                    Button(lang.s("prompts.add")) { addTerm() }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                         .disabled(newTerm.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -74,7 +75,7 @@ struct PromptsScreen: View {
                         }
                     }
                 } else {
-                    Text("暂无术语")
+                    Text(lang.s("prompts.no_terms"))
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -82,7 +83,7 @@ struct PromptsScreen: View {
                 }
             }
         } label: {
-            Label("术语表", systemImage: "text.book.closed")
+            Label(lang.s("prompts.glossary"), systemImage: "text.book.closed")
         }
     }
 
@@ -95,7 +96,7 @@ struct PromptsScreen: View {
     private var baseInstructionSection: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 12) {
-                Text("作为转写的基础指令发送给大模型，对所有应用生效。选择预设模板或自定义编辑。")
+                Text(lang.s("prompts.base_instruction_desc"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -160,7 +161,7 @@ struct PromptsScreen: View {
 
                 HStack(spacing: 8) {
                     if selectedTemplate == nil {
-                        Text("自定义")
+                        Text(lang.s("prompts.custom"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 8)
@@ -173,7 +174,7 @@ struct PromptsScreen: View {
 
                     Spacer()
 
-                    Button("还原") {
+                    Button(lang.s("prompts.revert")) {
                         editingBaseInstruction = promptStore.config.baseInstruction
                         selectedTemplate = promptStore.config.baseInstructionTemplate
                     }
@@ -181,7 +182,7 @@ struct PromptsScreen: View {
                     .controlSize(.small)
                     .disabled(!baseInstructionHasChanges)
 
-                    Button("保存") {
+                    Button(lang.s("prompts.save")) {
                         promptStore.config.baseInstruction = editingBaseInstruction
                         promptStore.config.baseInstructionTemplate = selectedTemplate
                     }
@@ -191,7 +192,7 @@ struct PromptsScreen: View {
                 }
             }
         } label: {
-            Label("基础指令", systemImage: "text.alignleft")
+            Label(lang.s("prompts.base_instruction"), systemImage: "text.alignleft")
         }
     }
 
@@ -200,12 +201,12 @@ struct PromptsScreen: View {
     private var appPromptsSection: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 12) {
-                Text("为特定应用设置专属的转写指令，作为基础指令的补充。")
+                Text(lang.s("prompts.app_prompts_desc"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 if promptStore.config.appPrompts.isEmpty {
-                    Text("暂无应用专属提示词")
+                    Text(lang.s("prompts.no_app_prompts"))
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -225,22 +226,22 @@ struct PromptsScreen: View {
                 // Add new app prompt
                 if isAddingAppPrompt {
                     VStack(alignment: .leading, spacing: 8) {
-                        TextField("应用名称", text: $newAppName)
+                        TextField(lang.s("prompts.app_name"), text: $newAppName)
                             .textFieldStyle(.roundedBorder)
-                        TextField("Bundle ID（可选）", text: $newAppBundleId)
+                        TextField(lang.s("prompts.bundle_id"), text: $newAppBundleId)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(.body, design: .monospaced))
-                        TextField("提示词内容", text: $newAppPrompt)
+                        TextField(lang.s("prompts.prompt_content"), text: $newAppPrompt)
                             .textFieldStyle(.roundedBorder)
 
                         HStack {
-                            Button("取消") {
+                            Button(lang.s("prompts.cancel")) {
                                 isAddingAppPrompt = false
                                 resetNewAppFields()
                             }
                             .buttonStyle(.bordered)
 
-                            Button("添加") {
+                            Button(lang.s("prompts.add")) {
                                 let prompt = AppPrompt(
                                     appName: newAppName,
                                     appBundleId: newAppBundleId.isEmpty ? nil : newAppBundleId,
@@ -263,14 +264,14 @@ struct PromptsScreen: View {
                     Button {
                         isAddingAppPrompt = true
                     } label: {
-                        Label("添加应用提示词", systemImage: "plus")
+                        Label(lang.s("prompts.add_app_prompt"), systemImage: "plus")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
             }
         } label: {
-            Label("应用专属提示词", systemImage: "app.badge.checkmark")
+            Label(lang.s("prompts.app_prompts"), systemImage: "app.badge.checkmark")
         }
     }
 

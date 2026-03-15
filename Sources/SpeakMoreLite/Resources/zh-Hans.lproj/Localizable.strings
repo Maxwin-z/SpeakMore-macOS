@@ -1,0 +1,216 @@
+/* Navigation */
+"nav.home" = "首页";
+"nav.history" = "历史记录";
+"nav.ai_enhance" = "AI增强";
+"nav.settings" = "设置";
+
+/* Home Screen */
+"home.subtitle" = "语音输入，让表达更自然";
+"home.description" = "按住快捷键即可开始录音，松开后自动转写，结果直接输入到当前聚焦的文本框中。";
+"home.multimodal_title" = "多模态转写";
+"home.multimodal_desc" = "音频直接发送到云端多模态大模型，一步完成转写与增强";
+"home.hotkey_title" = "全局快捷键";
+"home.hotkey_desc" = "在任意应用中按住快捷键即可录音，松开自动插入文字";
+"home.context_title" = "上下文感知";
+"home.context_desc" = "自动学习你的用词习惯和常用术语，转写越用越准确";
+"home.system_status" = "系统状态";
+"home.accessibility" = "辅助功能";
+"home.input_monitoring" = "输入监控";
+"home.api_config" = "API 配置";
+"home.hotkey" = "快捷键";
+"home.ready" = "已就绪";
+"home.setup_needed" = "需配置";
+
+/* Settings */
+"settings.title" = "设置";
+"settings.language" = "语言";
+"settings.interface_language" = "界面语言";
+"settings.permission_status" = "权限状态";
+"settings.accessibility_permission" = "辅助功能权限";
+"settings.accessibility_desc" = "需要此权限来监听快捷键和自动输入文字";
+"settings.authorize" = "授权";
+"settings.fn_key_setup" = "Fn 键设置";
+"settings.fn_key_desc" = "请将系统设置 → 键盘 → Fn 键设为「不执行任何操作」";
+"settings.open_keyboard_settings" = "打开键盘设置";
+"settings.hotkey" = "快捷键";
+"settings.hotkey_hint" = "按住快捷键开始录音，松开结束";
+"settings.provider" = "服务商";
+"settings.api_key_placeholder" = "输入 API Key…";
+"settings.api_endpoint" = "API 地址";
+"settings.model" = "模型";
+"settings.custom_model_id" = "自定义模型 ID";
+"settings.custom_model_hint" = "留空则使用上方选择的模型";
+"settings.custom_model_placeholder" = "例如: gemini-2.5-flash-preview";
+"settings.configured_fmt" = "已配置，语音将通过 %@ 处理";
+"settings.enter_api_key" = "请输入 API Key 以启用语音转写";
+"settings.multimodal_api" = "多模态 API";
+"settings.press_hotkey" = "请按下快捷键...";
+"settings.cancel" = "取消";
+"settings.record_hotkey" = "录制快捷键";
+"settings.reset_default" = "恢复默认";
+
+/* Prompts Screen */
+"prompts.title" = "AI增强";
+"prompts.subtitle" = "自定义转写指令与术语表，提升识别准确性。术语表具有最高优先级。";
+"prompts.glossary" = "术语表";
+"prompts.glossary_desc" = "添加品牌名、技术术语等，确保转写时使用指定写法。";
+"prompts.enter_term" = "输入术语…";
+"prompts.add" = "添加";
+"prompts.no_terms" = "暂无术语";
+"prompts.base_instruction" = "基础指令";
+"prompts.base_instruction_desc" = "作为转写的基础指令发送给大模型，对所有应用生效。选择预设模板或自定义编辑。";
+"prompts.custom" = "自定义";
+"prompts.revert" = "还原";
+"prompts.save" = "保存";
+"prompts.app_prompts" = "应用专属提示词";
+"prompts.app_prompts_desc" = "为特定应用设置专属的转写指令，作为基础指令的补充。";
+"prompts.no_app_prompts" = "暂无应用专属提示词";
+"prompts.app_name" = "应用名称";
+"prompts.bundle_id" = "Bundle ID（可选）";
+"prompts.prompt_content" = "提示词内容";
+"prompts.cancel" = "取消";
+"prompts.add_app_prompt" = "添加应用提示词";
+
+/* History Screen */
+"history.recordings" = "录音记录";
+"history.no_recordings" = "暂无录音记录";
+"history.hold_hotkey" = "按住快捷键开始录音";
+"history.copy_text" = "复制文本";
+"history.delete" = "删除";
+"history.select_record" = "选择一条记录查看详情";
+"history.untitled" = "无标题";
+"history.transcription" = "转写内容";
+"history.original" = "原始转写";
+"history.re_recognition_history" = "重新识别记录";
+"history.recognizing" = "正在识别...";
+"history.select_model" = "选择模型";
+"history.configure_api" = "请先在设置中配置 API Key";
+"history.context_level" = "上下文级别";
+"history.re_recognize" = "重新识别";
+"history.context_layers" = "上下文层级";
+"history.yesterday" = "昨天";
+"history.full_context_fmt" = "%@s ≥ 45s → 全部上下文";
+"history.base_recent_fmt" = "%@s ≥ 15s → 基础 + 近期上下文";
+"history.base_only_fmt" = "%@s < 15s → 仅基础上下文";
+
+/* Context */
+"context.dynamic" = "动态上下文";
+"context.user_profile" = "用户画像";
+"context.recent" = "近期上下文";
+"context.no_data" = "暂无上下文数据。使用语音转写后将自动生成。";
+"context.auto_inject" = "以上上下文自动注入到每次转写中，提升识别准确性";
+"context.collapse_full" = "收起完整上下文";
+"context.view_full" = "查看完整上下文";
+"context.snapshot_title" = "近期上下文快照";
+"context.refresh" = "刷新";
+"context.topic" = "话题";
+"context.intent" = "意图";
+"context.domain" = "领域";
+"context.recent_vocab" = "近期词汇";
+"context.entity_cloud" = "实体词云";
+"context.updated_fmt" = "更新于 %@";
+"context.collapse_raw" = "收起原始数据";
+"context.view_raw" = "查看原始数据";
+"context.no_snapshot" = "暂无上下文快照。使用语音转写后将自动生成。";
+"context.identity" = "身份";
+"context.primary_domains" = "主要领域";
+"context.language_habits" = "语言习惯";
+"context.fixed_entities" = "固定实体";
+"context.no_profile" = "暂无用户画像。积累足够的上下文快照后将自动生成。";
+"context.enter_term" = "输入词汇";
+
+/* Menu Bar */
+"menu.open_window" = "打开主窗口";
+"menu.show_widget" = "显示悬浮按钮";
+"menu.quit" = "退出 SpeakMore Lite";
+
+/* Overlay & Panels */
+"overlay.transcribing" = "正在转译...";
+"overlay.click_edit" = "点击编辑";
+"panel.receiving" = "接收中...";
+"popover.no_history" = "暂无历史记录";
+
+/* Provider Names */
+"provider.dashscope" = "通义千问 (DashScope)";
+"provider.custom" = "自定义 (OpenAI 兼容)";
+
+/* Model Descriptions */
+"model.cost_effective" = "高性价比，推荐使用";
+"model.best_performance" = "最强性能";
+"model.fast_stable" = "快速稳定";
+"model.fast_bilingual" = "快速，支持中英文";
+"model.latest_gen" = "最新一代，效果更好";
+"model.open_source" = "开源模型";
+"model.via_openrouter" = "通过 OpenRouter 使用";
+
+/* Context Level */
+"context_level.none" = "无上下文";
+"context_level.realtime" = "ID 上下文";
+"context_level.short_term" = "短期上下文";
+"context_level.long_term" = "长期上下文";
+"context_level.none_desc" = "仅基础转写指令";
+"context_level.realtime_desc" = "加入来源应用信息";
+"context_level.short_term_desc" = "加入近期话题和词汇";
+"context_level.long_term_desc" = "加入用户画像和长期偏好";
+
+/* Base Instruction Templates */
+"template.faithful" = "忠实转写";
+"template.moderate" = "轻度优化";
+"template.structured" = "深度优化";
+"template.faithful_desc" = "完全保留原意，仅去除重复、语气词及错别字";
+"template.moderate_desc" = "保持原意，轻度调整语序与分段，使文本更易阅读";
+"template.structured_desc" = "保持核心语义，深度整理逻辑结构，输出接近正式书面语";
+"template.faithful_prompt" = "你是一个语音转写助手。请将用户的语音内容准确转写为文字，完全保留原意和表达方式：\n1. **去重处理**：去除重复的词语和因停顿导致的重复片段。\n2. **语气词清理**：剔除语气助词（如「嗯」、「啊」、「那个」）。\n3. **口误修正**：修正明显的口误错别字，不改变原始表达。\n直接输出转写结果，不要添加任何解释。";
+"template.moderate_prompt" = "你是一个语音转写助手。请将用户的语音内容转写为文字，保持原意不变：\n1. **降噪处理**：剔除语气助词（如「嗯」、「那个」、「就是」等）和重复词语。\n2. **语义纠错**：修正口语错误及 STT 可能识别错误的同音词。\n3. **轻度调整**：理顺语序、补充必要标点、合理分段，使文本自然流畅且易于阅读。\n直接输出转写结果，不要添加任何解释。";
+"template.structured_prompt" = "你是一个语音转写助手。请将用户的语音内容转写为结构清晰的书面文本，保持核心语义不变：\n1. **降噪处理**：剔除所有语气助词（如「嗯」、「那个」、「就是」、「然后」等）、重复的词语以及因思考导致的停顿碎片。\n2. **语义纠错**：根据上下文修正 STT 可能识别错误的专业术语或同音词（如将「识、OCR」修正为「OCR」）。\n3. **逻辑重组**：\n   - 识别文本中的核心观点，并为其添加简明扼要的【标题】。\n   - 将发散的叙述归纳为有逻辑层级的【列表】。\n   - 如果涉及流程或技术方案，请确保因果关系准确。\n4. **文风润色**：将口语化的表达转化为书面、专业且简洁的语言，但需保留作者的原始意图。\n直接输出转写结果，不要添加任何解释。";
+
+/* System Prompt Sections */
+"prompt.transcribe_instruction" = "请将以下语音内容准确转写为文字，直接输出转写结果，不要添加任何解释。";
+"prompt.context_intro" = "以下为优先级从高到低的上下文环境，供转写过程参考：";
+"prompt.glossary_header" = "【术语表（最高优先级）】";
+"prompt.glossary_intro" = "以下术语在转写时优先使用：";
+"prompt.profile_header" = "【用户画像】";
+"prompt.recent_context_header" = "【近期上下文】";
+"prompt.env_header" = "【当前环境】";
+"prompt.app_specific_header" = "【应用专属指令】";
+"prompt.user_identity" = "用户身份";
+"prompt.primary_domains" = "主要领域";
+"prompt.language_habits" = "语言习惯";
+"prompt.common_entities" = "常用实体";
+"prompt.current_topic" = "当前话题";
+"prompt.current_intent" = "当前意图";
+"prompt.domain_focus" = "领域聚焦";
+"prompt.recent_vocab" = "近期词汇";
+"prompt.entity_cloud" = "实体词云";
+"prompt.env_app" = "应用";
+"prompt.env_window" = "窗口";
+"prompt.env_document" = "文档";
+"prompt.env_none" = "无";
+"prompt.separator" = "、";
+"prompt.correction_label" = "---用户纠正记录（高置信度信息）---";
+"prompt.correction_label_short" = "---用户纠正记录（高置信度）---";
+"prompt.recent_snapshots" = "近期上下文快照:";
+"prompt.current_profile_label" = "当前用户画像:";
+"prompt.snapshot_system" = "你是一个上下文分析助手。分析以下语音转写文本，提取结构化信息。\n\n输入可能包含两部分：\n1. 语音转写文本（用户最近的语音输入）\n2. 用户纠正记录（用户手动修改了转写文本的部分，这是高置信度信息）\n\n特别注意：用户纠正记录中的「添加」词汇是用户确认的正确用词，应当优先收录到实体词云和近期词汇中。\n\n分析维度：\n1. 当前活动场景（如「代码调试」、「文档撰写」）\n2. 领域聚焦（技术栈、学科等）\n3. 实体词云（项目名、变量名、人名等专有名词，优先从用户纠正中提取）\n4. 近期高频词汇（优先从用户纠正中提取正确用词）\n5. 当前意图\n\n输出严格JSON格式（不要包含其他内容）：\n{\\\"topic\\\":\\\"...\\\",\\\"currentIntent\\\":\\\"...\\\",\\\"domainFocus\\\":\\\"...\\\",\\\"recentVocabulary\\\":[\\\"...\\\"],\\\"entityCloud\\\":[\\\"...\\\"]}";
+"prompt.profile_system" = "你是一个用户画像分析师。根据以下近期上下文快照，生成/更新用户长期画像。\n\n输入包含上下文快照的JSON摘要。快照中的实体词云和近期词汇可能来自用户手动纠正，这些是高置信度信息，应当优先纳入画像。\n\n分析维度：\n1. 职业身份推断\n2. 主要技术领域/知识领域\n3. 语言习惯（中英混用程度、口语特征）\n4. 固定实体（常提到的人名、项目名、工具名——特别关注跨多个快照重复出现的实体）\n\n输出严格JSON格式（不要包含其他内容）：\n{\\\"identity\\\":\\\"...\\\",\\\"primaryDomains\\\":[\\\"...\\\"],\\\"languageHabits\\\":\\\"...\\\",\\\"fixedEntities\\\":[\\\"...\\\"]}";
+
+/* Hotkey Modifier Labels */
+"hotkey.left_cmd" = "左⌘";
+"hotkey.right_cmd" = "右⌘";
+"hotkey.left_shift" = "左⇧";
+"hotkey.right_shift" = "右⇧";
+"hotkey.left_opt" = "左⌥";
+"hotkey.right_opt" = "右⌥";
+"hotkey.left_ctrl" = "左⌃";
+"hotkey.right_ctrl" = "右⌃";
+
+/* Errors */
+"error.invalid_url" = "无效的 API 地址";
+"error.http_fmt" = "API 返回 HTTP %d: %@";
+"error.invalid_response" = "API 返回无效响应";
+"error.recognition_failed_fmt" = "识别失败: %@";
+"error.configure_api" = "请先配置 API...";
+
+/* Duration */
+"duration.min_sec_fmt" = "%d分%d秒";
+"duration.sec_fmt" = "%d秒";

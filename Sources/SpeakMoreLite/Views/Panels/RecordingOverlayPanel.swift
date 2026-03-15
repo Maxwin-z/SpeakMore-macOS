@@ -370,7 +370,7 @@ struct TranscribingView: View {
                     .animation(.easeOut(duration: 0.3), value: progress)
             }
 
-            Text("正在转译...")
+            Text(L("overlay.transcribing"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white)
         }
@@ -396,7 +396,7 @@ struct CompletedView: View {
             Image(systemName: "checkmark")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(.green)
-            Text("点击编辑")
+            Text(L("overlay.click_edit"))
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.8))
         }

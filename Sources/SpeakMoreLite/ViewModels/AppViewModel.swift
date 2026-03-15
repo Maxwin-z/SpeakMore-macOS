@@ -141,7 +141,7 @@ class AppViewModel: ObservableObject {
         historyPopoverPanel.hideAnimated()
 
         if !MultimodalConfigStore.shared.isConfigured {
-            recordingOverlay.showLoadingHint("请先配置 API...")
+            recordingOverlay.showLoadingHint(L("error.configure_api"))
             return
         }
 

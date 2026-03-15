@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeScreen: View {
     @EnvironmentObject var appViewModel: AppViewModel
+    @ObservedObject private var lang = LanguageManager.shared
 
     var body: some View {
         ScrollView {
@@ -18,11 +19,11 @@ struct HomeScreen: View {
                     Text("SpeakMore Lite")
                         .font(.largeTitle.bold())
 
-                    Text("语音输入，让表达更自然")
+                    Text(lang.s("home.subtitle"))
                         .font(.title3)
                         .foregroundStyle(.secondary)
 
-                    Text("按住快捷键即可开始录音，松开后自动转写，结果直接输入到当前聚焦的文本框中。")
+                    Text(lang.s("home.description"))
                         .font(.body)
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
@@ -40,18 +41,18 @@ struct HomeScreen: View {
                 ], spacing: 16) {
                     FeatureCard(
                         icon: "waveform.badge.magnifyingglass",
-                        title: "多模态转写",
-                        description: "音频直接发送到云端多模态大模型，一步完成转写与增强"
+                        title: lang.s("home.multimodal_title"),
+                        description: lang.s("home.multimodal_desc")
                     )
                     FeatureCard(
                         icon: "keyboard",
-                        title: "全局快捷键",
-                        description: "在任意应用中按住快捷键即可录音，松开自动插入文字"
+                        title: lang.s("home.hotkey_title"),
+                        description: lang.s("home.hotkey_desc")
                     )
                     FeatureCard(
                         icon: "brain.head.profile",
-                        title: "上下文感知",
-                        description: "自动学习你的用词习惯和常用术语，转写越用越准确"
+                        title: lang.s("home.context_title"),
+                        description: lang.s("home.context_desc")
                     )
                 }
                 .padding(.horizontal, 40)
@@ -70,7 +71,7 @@ struct HomeScreen: View {
                 HStack(spacing: 16) {
                     statusItem(
                         icon: "hand.raised.fill",
-                        title: "辅助功能",
+                        title: lang.s("home.accessibility"),
                         isOK: appViewModel.isAccessibilityGranted
                     )
 
@@ -79,7 +80,7 @@ struct HomeScreen: View {
 
                     statusItem(
                         icon: "cursorarrow.click.badge.clock",
-                        title: "输入监控",
+                        title: lang.s("home.input_monitoring"),
                         isOK: appViewModel.permissionManager.isInputMonitoringGranted
                     )
 
@@ -88,7 +89,7 @@ struct HomeScreen: View {
 
                     statusItem(
                         icon: "network",
-                        title: "API 配置",
+                        title: lang.s("home.api_config"),
                         isOK: MultimodalConfigStore.shared.isConfigured
                     )
 
@@ -97,14 +98,14 @@ struct HomeScreen: View {
 
                     statusItem(
                         icon: "keyboard",
-                        title: "快捷键",
+                        title: lang.s("home.hotkey"),
                         isOK: true
                     )
                 }
             }
             .padding(.vertical, 4)
         } label: {
-            Label("系统状态", systemImage: "checkmark.shield")
+            Label(lang.s("home.system_status"), systemImage: "checkmark.shield")
         }
         .padding(.horizontal, 40)
     }
@@ -117,7 +118,7 @@ struct HomeScreen: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
                     .font(.callout.weight(.medium))
-                Text(isOK ? "已就绪" : "需配置")
+                Text(isOK ? lang.s("home.ready") : lang.s("home.setup_needed"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

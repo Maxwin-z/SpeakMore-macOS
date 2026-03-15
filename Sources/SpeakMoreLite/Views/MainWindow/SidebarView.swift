@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SidebarView: View {
     @ObservedObject var navigation: NavigationViewModel
+    @ObservedObject private var lang = LanguageManager.shared
 
     var body: some View {
         List(SidebarTab.allCases, selection: $navigation.selectedTab) { tab in

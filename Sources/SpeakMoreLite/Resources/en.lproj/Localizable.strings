@@ -1,0 +1,218 @@
+/* Navigation */
+"nav.home" = "Home";
+"nav.history" = "History";
+"nav.ai_enhance" = "AI Enhance";
+"nav.settings" = "Settings";
+
+/* Home Screen */
+"home.subtitle" = "Voice input for natural expression";
+"home.description" = "Hold the hotkey to start recording, release to auto-transcribe, and the result is typed directly into the focused text field.";
+"home.multimodal_title" = "Multimodal Transcription";
+"home.multimodal_desc" = "Audio sent directly to cloud multimodal models for one-step transcription and enhancement";
+"home.hotkey_title" = "Global Hotkey";
+"home.hotkey_desc" = "Hold the hotkey in any app to record, release to auto-insert text";
+"home.context_title" = "Context Awareness";
+"home.context_desc" = "Automatically learns your vocabulary and common terms for increasingly accurate transcription";
+"home.system_status" = "System Status";
+"home.accessibility" = "Accessibility";
+"home.input_monitoring" = "Input Monitoring";
+"home.api_config" = "API Config";
+"home.hotkey" = "Hotkey";
+"home.ready" = "Ready";
+"home.setup_needed" = "Setup Needed";
+
+/* Settings */
+"settings.title" = "Settings";
+"settings.language" = "Language";
+"settings.interface_language" = "Interface Language";
+"settings.permission_status" = "Permission Status";
+"settings.accessibility_permission" = "Accessibility Permission";
+"settings.accessibility_desc" = "Required for listening to hotkeys and auto-typing text";
+"settings.authorize" = "Authorize";
+"settings.fn_key_setup" = "Fn Key Setup";
+"settings.fn_key_desc" = "Set System Settings → Keyboard → Fn key to \"Do Nothing\"";
+"settings.open_keyboard_settings" = "Open Keyboard Settings";
+"settings.hotkey" = "Hotkey";
+"settings.hotkey_hint" = "Hold hotkey to record, release to stop";
+"settings.provider" = "Provider";
+"settings.api_key_placeholder" = "Enter API Key…";
+"settings.api_endpoint" = "API Endpoint";
+"settings.model" = "Model";
+"settings.custom_model_id" = "Custom Model ID";
+"settings.custom_model_hint" = "Leave empty to use the selected model above";
+"settings.custom_model_placeholder" = "e.g.: gemini-2.5-flash-preview";
+"settings.configured_fmt" = "Configured, voice will be processed via %@";
+"settings.enter_api_key" = "Enter API Key to enable voice transcription";
+"settings.multimodal_api" = "Multimodal API";
+"settings.press_hotkey" = "Press hotkey...";
+"settings.cancel" = "Cancel";
+"settings.record_hotkey" = "Record Hotkey";
+"settings.reset_default" = "Reset to Default";
+
+/* Prompts Screen */
+"prompts.title" = "AI Enhance";
+"prompts.subtitle" = "Customize transcription instructions and glossary to improve recognition accuracy. Glossary has the highest priority.";
+"prompts.glossary" = "Glossary";
+"prompts.glossary_desc" = "Add brand names, technical terms, etc. to ensure correct spelling during transcription.";
+"prompts.enter_term" = "Enter term…";
+"prompts.add" = "Add";
+"prompts.no_terms" = "No terms yet";
+"prompts.base_instruction" = "Base Instruction";
+"prompts.base_instruction_desc" = "Sent as the base instruction to the model for all apps. Choose a preset template or customize.";
+"prompts.custom" = "Custom";
+"prompts.revert" = "Revert";
+"prompts.save" = "Save";
+"prompts.app_prompts" = "App-Specific Prompts";
+"prompts.app_prompts_desc" = "Set specific transcription instructions for certain apps, as a supplement to the base instruction.";
+"prompts.no_app_prompts" = "No app-specific prompts yet";
+"prompts.app_name" = "App Name";
+"prompts.bundle_id" = "Bundle ID (optional)";
+"prompts.prompt_content" = "Prompt Content";
+"prompts.cancel" = "Cancel";
+"prompts.add_app_prompt" = "Add App Prompt";
+
+/* History Screen */
+"history.recordings" = "Recordings";
+"history.no_recordings" = "No recordings yet";
+"history.hold_hotkey" = "Hold hotkey to start recording";
+"history.copy_text" = "Copy Text";
+"history.delete" = "Delete";
+"history.select_record" = "Select a record to view details";
+"history.untitled" = "Untitled";
+"history.transcription" = "Transcription";
+"history.original" = "Original";
+"history.re_recognition_history" = "Re-recognition History";
+"history.recognizing" = "Recognizing...";
+"history.select_model" = "Select Model";
+"history.configure_api" = "Please configure API Key in Settings first";
+"history.context_level" = "Context Level";
+"history.re_recognize" = "Re-recognize";
+"history.context_layers" = "Context Layers";
+"history.yesterday" = "Yesterday";
+"history.full_context_fmt" = "%@s ≥ 45s → Full context";
+"history.base_recent_fmt" = "%@s ≥ 15s → Base + recent context";
+"history.base_only_fmt" = "%@s < 15s → Base context only";
+
+/* Context */
+"context.dynamic" = "Dynamic Context";
+"context.user_profile" = "User Profile";
+"context.recent" = "Recent Context";
+"context.no_data" = "No context data yet. It will be auto-generated after voice transcription.";
+"context.auto_inject" = "The above context is auto-injected into each transcription to improve accuracy";
+"context.collapse_full" = "Collapse full context";
+"context.view_full" = "View full context";
+"context.snapshot_title" = "Recent Context Snapshot";
+"context.refresh" = "Refresh";
+"context.topic" = "Topic";
+"context.intent" = "Intent";
+"context.domain" = "Domain";
+"context.recent_vocab" = "Recent Vocabulary";
+"context.entity_cloud" = "Entity Cloud";
+"context.updated_fmt" = "Updated at %@";
+"context.collapse_raw" = "Collapse raw data";
+"context.view_raw" = "View raw data";
+"context.no_snapshot" = "No context snapshot yet. It will be auto-generated after voice transcription.";
+"context.identity" = "Identity";
+"context.primary_domains" = "Primary Domains";
+"context.language_habits" = "Language Habits";
+"context.fixed_entities" = "Fixed Entities";
+"context.no_profile" = "No user profile yet. It will be auto-generated after enough context snapshots.";
+"context.enter_term" = "Enter term";
+
+/* Menu Bar */
+"menu.open_window" = "Open Main Window";
+"menu.show_widget" = "Show Floating Button";
+"menu.quit" = "Quit SpeakMore Lite";
+
+/* Overlay & Panels */
+"overlay.transcribing" = "Transcribing...";
+"overlay.click_edit" = "Click to edit";
+"panel.receiving" = "Receiving...";
+"popover.no_history" = "No history";
+
+/* Provider Names */
+"provider.dashscope" = "Tongyi Qianwen (DashScope)";
+"provider.custom" = "Custom (OpenAI Compatible)";
+
+/* Model Descriptions */
+"model.cost_effective" = "Cost-effective, recommended";
+"model.best_performance" = "Best performance";
+"model.fast_stable" = "Fast and stable";
+"model.fast_bilingual" = "Fast, supports Chinese & English";
+"model.latest_gen" = "Latest generation, better results";
+"model.open_source" = "Open source model";
+"model.via_openrouter" = "Via OpenRouter";
+
+/* Context Level */
+"context_level.none" = "No Context";
+"context_level.realtime" = "ID Context";
+"context_level.short_term" = "Short-term Context";
+"context_level.long_term" = "Long-term Context";
+"context_level.none_desc" = "Base transcription instruction only";
+"context_level.realtime_desc" = "Include source app info";
+"context_level.short_term_desc" = "Include recent topics and vocabulary";
+"context_level.long_term_desc" = "Include user profile and long-term preferences";
+
+/* Base Instruction Templates */
+"template.faithful" = "Faithful Transcription";
+"template.moderate" = "Light Optimization";
+"template.structured" = "Deep Optimization";
+"template.faithful_desc" = "Preserve original meaning, only remove duplicates, filler words, and typos";
+"template.moderate_desc" = "Keep original meaning, lightly adjust word order and paragraphing for readability";
+"template.structured_desc" = "Keep core semantics, deeply organize logical structure, output near-formal written language";
+
+/* Hotkey Modifier Labels */
+"hotkey.left_cmd" = "L⌘";
+"hotkey.right_cmd" = "R⌘";
+"hotkey.left_shift" = "L⇧";
+"hotkey.right_shift" = "R⇧";
+"hotkey.left_opt" = "L⌥";
+"hotkey.right_opt" = "R⌥";
+"hotkey.left_ctrl" = "L⌃";
+"hotkey.right_ctrl" = "R⌃";
+
+/* Errors */
+"error.invalid_url" = "Invalid API endpoint";
+"error.http_fmt" = "API returned HTTP %d: %@";
+"error.invalid_response" = "API returned invalid response";
+"error.recognition_failed_fmt" = "Recognition failed: %@";
+"error.configure_api" = "Configure API first...";
+
+/* Base Instruction Template Prompts */
+"template.faithful_prompt" = "You are a voice transcription assistant. Please accurately transcribe the user's voice content into text, fully preserving the original meaning and expression:\n1. **Deduplication**: Remove repeated words and fragments caused by pauses.\n2. **Filler word cleanup**: Remove filler words (such as \"um\", \"uh\", \"like\").\n3. **Slip correction**: Correct obvious slips and typos without changing the original expression.\nOutput the transcription result directly without adding any explanation.";
+"template.moderate_prompt" = "You are a voice transcription assistant. Please transcribe the user's voice content into text while keeping the original meaning unchanged:\n1. **Noise reduction**: Remove filler words (such as \"um\", \"like\", \"you know\") and repeated words.\n2. **Semantic correction**: Correct spoken errors and words that STT may have misrecognized.\n3. **Light adjustment**: Smooth word order, add necessary punctuation, and organize paragraphs to make the text natural and easy to read.\nOutput the transcription result directly without adding any explanation.";
+"template.structured_prompt" = "You are a voice transcription assistant. Please transcribe the user's voice content into clearly structured written text while keeping the core semantics unchanged:\n1. **Noise reduction**: Remove all filler words (such as \"um\", \"like\", \"you know\", \"so\"), repeated words, and pause fragments caused by thinking.\n2. **Semantic correction**: Correct professional terms or homophones that STT may have misrecognized based on context.\n3. **Logic reorganization**:\n   - Identify core points in the text and add concise [headings].\n   - Organize divergent narratives into logically structured [lists].\n   - If processes or technical solutions are involved, ensure causal relationships are accurate.\n4. **Style polishing**: Convert colloquial expressions into written, professional, and concise language while preserving the author's original intent.\nOutput the transcription result directly without adding any explanation.";
+
+/* System Prompt Sections */
+"prompt.transcribe_instruction" = "Please accurately transcribe the following voice content into text. Output the transcription result directly without adding any explanation.";
+"prompt.context_intro" = "The following is contextual information listed from highest to lowest priority, for reference during transcription:";
+"prompt.glossary_header" = "【Glossary (Highest Priority)】";
+"prompt.glossary_intro" = "Use the following terms preferentially during transcription:";
+"prompt.profile_header" = "【User Profile】";
+"prompt.recent_context_header" = "【Recent Context】";
+"prompt.env_header" = "【Current Environment】";
+"prompt.app_specific_header" = "【App-Specific Instructions】";
+"prompt.user_identity" = "User Identity";
+"prompt.primary_domains" = "Primary Domains";
+"prompt.language_habits" = "Language Habits";
+"prompt.common_entities" = "Common Entities";
+"prompt.current_topic" = "Current Topic";
+"prompt.current_intent" = "Current Intent";
+"prompt.domain_focus" = "Domain Focus";
+"prompt.recent_vocab" = "Recent Vocabulary";
+"prompt.entity_cloud" = "Entity Cloud";
+"prompt.env_app" = "App";
+"prompt.env_window" = "Window";
+"prompt.env_document" = "Document";
+"prompt.env_none" = "None";
+"prompt.separator" = ", ";
+"prompt.correction_label" = "---User Correction Records (High Confidence)---";
+"prompt.correction_label_short" = "---User Correction Records (High Confidence)---";
+"prompt.recent_snapshots" = "Recent context snapshots:";
+"prompt.current_profile_label" = "Current user profile:";
+"prompt.snapshot_system" = "You are a context analysis assistant. Analyze the following voice transcription text and extract structured information.\n\nThe input may contain two parts:\n1. Voice transcription text (user's recent voice input)\n2. User correction records (parts where the user manually modified the transcription, this is high-confidence information)\n\nPay special attention: \"Added\" words in user correction records are confirmed correct terms by the user and should be prioritized for inclusion in entity cloud and recent vocabulary.\n\nAnalysis dimensions:\n1. Current activity scene (e.g., \"code debugging\", \"document writing\")\n2. Domain focus (tech stack, discipline, etc.)\n3. Entity cloud (project names, variable names, person names, and other proper nouns, prioritize extraction from user corrections)\n4. Recent high-frequency vocabulary (prioritize correct terms from user corrections)\n5. Current intent\n\nOutput strictly in JSON format (do not include anything else):\n{\"topic\":\"...\",\"currentIntent\":\"...\",\"domainFocus\":\"...\",\"recentVocabulary\":[\"...\"],\"entityCloud\":[\"...\"]}";
+"prompt.profile_system" = "You are a user profile analyst. Based on the following recent context snapshots, generate/update the user's long-term profile.\n\nThe input contains JSON summaries of context snapshots. Entity clouds and recent vocabulary in snapshots may come from user manual corrections, which are high-confidence information and should be prioritized for inclusion in the profile.\n\nAnalysis dimensions:\n1. Professional identity inference\n2. Primary technical/knowledge domains\n3. Language habits (degree of bilingual mixing, spoken characteristics)\n4. Fixed entities (frequently mentioned person names, project names, tool names — pay special attention to entities that appear repeatedly across multiple snapshots)\n\nOutput strictly in JSON format (do not include anything else):\n{\"identity\":\"...\",\"primaryDomains\":[\"...\"],\"languageHabits\":\"...\",\"fixedEntities\":[\"...\"]}";
+
+/* Duration */
+"duration.min_sec_fmt" = "%dm%ds";
+"duration.sec_fmt" = "%ds";

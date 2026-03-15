@@ -108,7 +108,7 @@ class MultimodalService {
                     body["contents"] = [[
                         "role": "user",
                         "parts": [
-                            ["text": "请将以下语音内容准确转写为文字，直接输出转写结果，不要添加任何解释。"],
+                            ["text": L("prompt.transcribe_instruction")],
                             ["inlineData": [
                                 "mimeType": "audio/wav",
                                 "data": audioBase64
@@ -217,7 +217,7 @@ class MultimodalService {
                             ] as [String: Any],
                             [
                                 "type": "text",
-                                "text": "请将以上语音内容准确转写为文字，直接输出转写结果，不要添加任何解释。"
+                                "text": L("prompt.transcribe_instruction")
                             ] as [String: Any]
                         ]
                     ])
@@ -371,9 +371,9 @@ enum MultimodalServiceError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidURL: return "无效的 API 地址"
-        case .httpError(let code, let body): return "API 返回 HTTP \(code): \(body)"
-        case .invalidResponse: return "API 返回无效响应"
+        case .invalidURL: return L("error.invalid_url")
+        case .httpError(let code, let body): return String(format: L("error.http_fmt"), code, body)
+        case .invalidResponse: return L("error.invalid_response")
         }
     }
 }

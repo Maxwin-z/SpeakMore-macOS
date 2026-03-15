@@ -4,6 +4,7 @@ import SwiftUI
 
 struct ContextSnapshotCard: View {
     @ObservedObject var contextService: ContextProfileService
+    @ObservedObject private var lang = LanguageManager.shared
     @State private var showRawJSON = false
 
     var body: some View {
@@ -12,7 +13,7 @@ struct ContextSnapshotCard: View {
                 Image(systemName: "brain.head.profile")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.indigo)
-                Text("近期上下文快照")
+                Text(lang.s("context.snapshot_title"))
                     .font(.system(size: 14, weight: .bold))
                 Spacer()
 
@@ -21,7 +22,7 @@ struct ContextSnapshotCard: View {
                         .controlSize(.small)
                 }
 
-                Button("刷新") {
+                Button(lang.s("context.refresh")) {
                     Task { await contextService.refreshSnapshot() }
                 }
                 .font(.system(size: 12, weight: .medium))
@@ -33,16 +34,16 @@ struct ContextSnapshotCard: View {
             if let snapshot = contextService.latestSnapshot {
                 VStack(alignment: .leading, spacing: 10) {
                     if let topic = snapshot.topic {
-                        ContextInfoRow(label: "话题", value: topic)
+                        ContextInfoRow(label: lang.s("context.topic"), value: topic)
                     }
                     if let intent = snapshot.currentIntent {
-                        ContextInfoRow(label: "意图", value: intent)
+                        ContextInfoRow(label: lang.s("context.intent"), value: intent)
                     }
                     if let domain = snapshot.domainFocus {
-                        ContextInfoRow(label: "领域", value: domain)
+                        ContextInfoRow(label: lang.s("context.domain"), value: domain)
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("近期词汇")
+                        Text(lang.s("context.recent_vocab"))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.secondary)
                         EditableTagFlowView(
@@ -54,7 +55,7 @@ struct ContextSnapshotCard: View {
                         )
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("实体词云")
+                        Text(lang.s("context.entity_cloud"))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.secondary)
                         EditableTagFlowView(
@@ -68,12 +69,14 @@ struct ContextSnapshotCard: View {
                 }
 
                 if let date = contextService.latestSnapshotDate {
-                    Text("更新于 \(date.formatted(date: .abbreviated, time: .shortened))")
+                    Text(String(format: lang.s("context.updated_fmt"), date.formatted(date: .abbreviated, time: .shortened)))
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
 
-                Button(showRawJSON ? "收起原始数据" : "查看原始数据") {
+                Button(showRawJSON
+                       ? lang.s("context.collapse_raw")
+                       : lang.s("context.view_raw")) {
                     withAnimation { showRawJSON.toggle() }
                 }
                 .font(.system(size: 11))
@@ -96,7 +99,7 @@ struct ContextSnapshotCard: View {
                         )
                 }
             } else {
-                Text("暂无上下文快照。使用语音转写后将自动生成。")
+                Text(lang.s("context.no_snapshot"))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .italic()
@@ -120,6 +123,7 @@ struct ContextSnapshotCard: View {
 
 struct UserProfileCard: View {
     @ObservedObject var contextService: ContextProfileService
+    @ObservedObject private var lang = LanguageManager.shared
     @State private var showRawJSON = false
 
     var body: some View {
@@ -128,7 +132,7 @@ struct UserProfileCard: View {
                 Image(systemName: "person.text.rectangle")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.green)
-                Text("用户画像")
+                Text(lang.s("context.user_profile"))
                     .font(.system(size: 14, weight: .bold))
                 Spacer()
 
@@ -137,7 +141,7 @@ struct UserProfileCard: View {
                         .controlSize(.small)
                 }
 
-                Button("刷新") {
+                Button(lang.s("context.refresh")) {
                     Task { await contextService.refreshProfile() }
                 }
                 .font(.system(size: 12, weight: .medium))
@@ -149,10 +153,10 @@ struct UserProfileCard: View {
             if let profile = contextService.activeProfile {
                 VStack(alignment: .leading, spacing: 10) {
                     if let identity = profile.identity {
-                        ContextInfoRow(label: "身份", value: identity)
+                        ContextInfoRow(label: lang.s("context.identity"), value: identity)
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("主要领域")
+                        Text(lang.s("context.primary_domains"))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.secondary)
                         EditableTagFlowView(
@@ -164,10 +168,10 @@ struct UserProfileCard: View {
                         )
                     }
                     if let habits = profile.languageHabits {
-                        ContextInfoRow(label: "语言习惯", value: habits)
+                        ContextInfoRow(label: lang.s("context.language_habits"), value: habits)
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("固定实体")
+                        Text(lang.s("context.fixed_entities"))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.secondary)
                         EditableTagFlowView(
@@ -181,12 +185,14 @@ struct UserProfileCard: View {
                 }
 
                 if let date = contextService.activeProfileDate {
-                    Text("更新于 \(date.formatted(date: .abbreviated, time: .shortened))")
+                    Text(String(format: lang.s("context.updated_fmt"), date.formatted(date: .abbreviated, time: .shortened)))
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
 
-                Button(showRawJSON ? "收起原始数据" : "查看原始数据") {
+                Button(showRawJSON
+                       ? lang.s("context.collapse_raw")
+                       : lang.s("context.view_raw")) {
                     withAnimation { showRawJSON.toggle() }
                 }
                 .font(.system(size: 11))
@@ -209,7 +215,7 @@ struct UserProfileCard: View {
                         )
                 }
             } else {
-                Text("暂无用户画像。积累足够的上下文快照后将自动生成。")
+                Text(lang.s("context.no_profile"))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .italic()
@@ -359,7 +365,7 @@ struct EditableTagFlowView: View {
     }
 
     private func addTagField() -> some View {
-        TextField("输入词汇", text: $newTagText, onCommit: {
+        TextField(L("context.enter_term"), text: $newTagText, onCommit: {
             let trimmed = newTagText.trimmingCharacters(in: .whitespaces)
             if !trimmed.isEmpty {
                 withAnimation(.easeInOut(duration: 0.15)) {

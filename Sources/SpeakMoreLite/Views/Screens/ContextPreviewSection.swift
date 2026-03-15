@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContextPreviewSection: View {
     @ObservedObject var contextService: ContextProfileService
+    @ObservedObject private var lang = LanguageManager.shared
     @State private var isExpanded = false
 
     var body: some View {
@@ -10,7 +11,7 @@ struct ContextPreviewSection: View {
                 // User profile summary
                 if let profile = contextService.activeProfile {
                     VStack(alignment: .leading, spacing: 8) {
-                        sectionLabel("用户画像")
+                        sectionLabel(lang.s("context.user_profile"))
 
                         HStack(spacing: 12) {
                             if let identity = profile.identity {
@@ -30,7 +31,7 @@ struct ContextPreviewSection: View {
                 // Recent context summary
                 if let snapshot = contextService.latestSnapshot {
                     VStack(alignment: .leading, spacing: 8) {
-                        sectionLabel("近期上下文")
+                        sectionLabel(lang.s("context.recent"))
 
                         HStack(spacing: 12) {
                             if let topic = snapshot.topic {
@@ -48,7 +49,7 @@ struct ContextPreviewSection: View {
                 }
 
                 if contextService.activeProfile == nil && contextService.latestSnapshot == nil {
-                    Text("暂无上下文数据。使用语音转写后将自动生成。")
+                    Text(lang.s("context.no_data"))
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                         .italic()
@@ -56,12 +57,14 @@ struct ContextPreviewSection: View {
                         .padding(.vertical, 8)
                 }
 
-                Text("以上上下文自动注入到每次转写中，提升识别准确性")
+                Text(lang.s("context.auto_inject"))
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
 
                 // Expand/collapse
-                Button(isExpanded ? "收起完整上下文" : "查看完整上下文") {
+                Button(isExpanded
+                       ? lang.s("context.collapse_full")
+                       : lang.s("context.view_full")) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         isExpanded.toggle()
                     }
@@ -78,7 +81,7 @@ struct ContextPreviewSection: View {
                 }
             }
         } label: {
-            Label("动态上下文", systemImage: "brain.head.profile")
+            Label(lang.s("context.dynamic"), systemImage: "brain.head.profile")
         }
     }
 

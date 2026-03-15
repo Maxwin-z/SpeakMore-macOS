@@ -10,10 +10,10 @@ enum SidebarTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: return "首页"
-        case .history: return "历史记录"
-        case .prompts: return "AI增强"
-        case .settings: return "设置"
+        case .home: return L("nav.home")
+        case .history: return L("nav.history")
+        case .prompts: return L("nav.ai_enhance")
+        case .settings: return L("nav.settings")
         }
     }
 

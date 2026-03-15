@@ -171,7 +171,7 @@ struct HistoryPopoverContent: View {
             Image(systemName: "waveform.slash")
                 .font(.system(size: 24))
                 .foregroundStyle(.white.opacity(0.3))
-            Text("暂无历史记录")
+            Text(L("popover.no_history"))
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.4))
         }
@@ -193,9 +193,9 @@ struct HistoryPopoverRow: View {
         var parts: [String] = []
         let seconds = Int(recording.durationSeconds)
         if seconds >= 60 {
-            parts.append("\(seconds / 60)分\(seconds % 60)秒")
+            parts.append(String(format: L("duration.min_sec_fmt"), seconds / 60, seconds % 60))
         } else if seconds > 0 {
-            parts.append("\(seconds)秒")
+            parts.append(String(format: L("duration.sec_fmt"), seconds))
         }
         if let app = recording.sourceApp, !app.isEmpty {
             parts.append(app)

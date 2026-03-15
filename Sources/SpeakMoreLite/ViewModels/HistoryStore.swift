@@ -211,7 +211,7 @@ class HistoryStore: ObservableObject {
         } catch {
             NSLog("[HistoryStore] Re-recognition error: \(error)")
             if fullText.isEmpty {
-                reRecognizingText = "识别失败: \(error.localizedDescription)"
+                reRecognizingText = String(format: L("error.recognition_failed_fmt"), error.localizedDescription)
                 return
             }
         }

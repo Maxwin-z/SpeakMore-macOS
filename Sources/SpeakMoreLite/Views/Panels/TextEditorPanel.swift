@@ -152,7 +152,7 @@ struct TextEditorContent: View {
                     ProgressView()
                         .controlSize(.small)
                         .scaleEffect(0.7)
-                    Text("接收中...")
+                    Text(L("panel.receiving"))
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.5))
                 }

@@ -106,47 +106,49 @@ class ContextProfileService: ObservableObject {
 
         var contextSections: [String] = []
 
+        let sep = L("prompt.separator")
+
         if !glossaryTerms.isEmpty {
-            contextSections.append("【术语表（最高优先级）】\n以下术语在转写时优先使用：\n\(glossaryTerms.joined(separator: "、"))")
+            contextSections.append("\(L("prompt.glossary_header"))\n\(L("prompt.glossary_intro"))\n\(glossaryTerms.joined(separator: sep))")
         }
 
         if contextLevel.rawValue >= ContextLevel.longTerm.rawValue, let profile = activeProfile {
             var profileParts: [String] = []
-            if let id = profile.identity { profileParts.append("用户身份: \(id)") }
+            if let id = profile.identity { profileParts.append("\(L("prompt.user_identity")): \(id)") }
             if let domains = profile.primaryDomains, !domains.isEmpty {
-                profileParts.append("主要领域: \(domains.joined(separator: "、"))")
+                profileParts.append("\(L("prompt.primary_domains")): \(domains.joined(separator: sep))")
             }
-            if let habits = profile.languageHabits { profileParts.append("语言习惯: \(habits)") }
+            if let habits = profile.languageHabits { profileParts.append("\(L("prompt.language_habits")): \(habits)") }
             if let entities = profile.fixedEntities, !entities.isEmpty {
-                profileParts.append("常用实体: \(entities.joined(separator: "、"))")
+                profileParts.append("\(L("prompt.common_entities")): \(entities.joined(separator: sep))")
             }
             if !profileParts.isEmpty {
-                contextSections.append("【用户画像】\n\(profileParts.joined(separator: "\n"))")
+                contextSections.append("\(L("prompt.profile_header"))\n\(profileParts.joined(separator: "\n"))")
             }
         }
 
         if contextLevel.rawValue >= ContextLevel.shortTerm.rawValue, let snapshot = latestSnapshot {
             var snapParts: [String] = []
-            if let topic = snapshot.topic { snapParts.append("当前话题: \(topic)") }
-            if let intent = snapshot.currentIntent { snapParts.append("当前意图: \(intent)") }
-            if let domain = snapshot.domainFocus { snapParts.append("领域聚焦: \(domain)") }
+            if let topic = snapshot.topic { snapParts.append("\(L("prompt.current_topic")): \(topic)") }
+            if let intent = snapshot.currentIntent { snapParts.append("\(L("prompt.current_intent")): \(intent)") }
+            if let domain = snapshot.domainFocus { snapParts.append("\(L("prompt.domain_focus")): \(domain)") }
             if let vocab = snapshot.recentVocabulary, !vocab.isEmpty {
-                snapParts.append("近期词汇: \(vocab.joined(separator: "、"))")
+                snapParts.append("\(L("prompt.recent_vocab")): \(vocab.joined(separator: sep))")
             }
             if let entities = snapshot.entityCloud, !entities.isEmpty {
-                snapParts.append("实体词云: \(entities.joined(separator: "、"))")
+                snapParts.append("\(L("prompt.entity_cloud")): \(entities.joined(separator: sep))")
             }
             if !snapParts.isEmpty {
-                contextSections.append("【近期上下文】\n\(snapParts.joined(separator: "\n"))")
+                contextSections.append("\(L("prompt.recent_context_header"))\n\(snapParts.joined(separator: "\n"))")
             }
         }
 
         if contextLevel.rawValue >= ContextLevel.realtime.rawValue, let app = sourceApp, !app.isEmpty {
-            contextSections.append("【当前环境】\n应用: \(app)")
+            contextSections.append("\(L("prompt.env_header"))\n\(L("prompt.env_app")): \(app)")
         }
 
         if !contextSections.isEmpty {
-            sections.append("以下为优先级从高到低的上下文环境，供转写过程参考：")
+            sections.append(L("prompt.context_intro"))
             sections.append(contentsOf: contextSections)
         }
 
@@ -180,59 +182,61 @@ class ContextProfileService: ObservableObject {
         // Build context sections by priority (high → low)
         var contextSections: [String] = []
 
+        let sep = L("prompt.separator")
+
         // Glossary terms (highest priority) — always included
         if !glossaryTerms.isEmpty {
-            contextSections.append("【术语表（最高优先级）】\n以下术语在转写时优先使用：\n\(glossaryTerms.joined(separator: "、"))")
+            contextSections.append("\(L("prompt.glossary_header"))\n\(L("prompt.glossary_intro"))\n\(glossaryTerms.joined(separator: sep))")
         }
 
         // Long-term profile — only for longTerm level (≥45s)
         if level.rawValue >= ContextLevel.longTerm.rawValue, let profile = activeProfile {
             var profileParts: [String] = []
-            if let id = profile.identity { profileParts.append("用户身份: \(id)") }
+            if let id = profile.identity { profileParts.append("\(L("prompt.user_identity")): \(id)") }
             if let domains = profile.primaryDomains, !domains.isEmpty {
-                profileParts.append("主要领域: \(domains.joined(separator: "、"))")
+                profileParts.append("\(L("prompt.primary_domains")): \(domains.joined(separator: sep))")
             }
-            if let habits = profile.languageHabits { profileParts.append("语言习惯: \(habits)") }
+            if let habits = profile.languageHabits { profileParts.append("\(L("prompt.language_habits")): \(habits)") }
             if let entities = profile.fixedEntities, !entities.isEmpty {
-                profileParts.append("常用实体: \(entities.joined(separator: "、"))")
+                profileParts.append("\(L("prompt.common_entities")): \(entities.joined(separator: sep))")
             }
             if !profileParts.isEmpty {
-                contextSections.append("【用户画像】\n\(profileParts.joined(separator: "\n"))")
+                contextSections.append("\(L("prompt.profile_header"))\n\(profileParts.joined(separator: "\n"))")
             }
         }
 
         // Short-term snapshot — for shortTerm+ level (≥15s)
         if level.rawValue >= ContextLevel.shortTerm.rawValue, let snapshot = latestSnapshot {
             var snapParts: [String] = []
-            if let topic = snapshot.topic { snapParts.append("当前话题: \(topic)") }
-            if let intent = snapshot.currentIntent { snapParts.append("当前意图: \(intent)") }
-            if let domain = snapshot.domainFocus { snapParts.append("领域聚焦: \(domain)") }
+            if let topic = snapshot.topic { snapParts.append("\(L("prompt.current_topic")): \(topic)") }
+            if let intent = snapshot.currentIntent { snapParts.append("\(L("prompt.current_intent")): \(intent)") }
+            if let domain = snapshot.domainFocus { snapParts.append("\(L("prompt.domain_focus")): \(domain)") }
             if let vocab = snapshot.recentVocabulary, !vocab.isEmpty {
-                snapParts.append("近期词汇: \(vocab.joined(separator: "、"))")
+                snapParts.append("\(L("prompt.recent_vocab")): \(vocab.joined(separator: sep))")
             }
             if let entities = snapshot.entityCloud, !entities.isEmpty {
-                snapParts.append("实体词云: \(entities.joined(separator: "、"))")
+                snapParts.append("\(L("prompt.entity_cloud")): \(entities.joined(separator: sep))")
             }
             if !snapParts.isEmpty {
-                contextSections.append("【近期上下文】\n\(snapParts.joined(separator: "\n"))")
+                contextSections.append("\(L("prompt.recent_context_header"))\n\(snapParts.joined(separator: "\n"))")
             }
         }
 
         // Real-time environment — for realtime+ level (always, since minimum is realtime)
         if level.rawValue >= ContextLevel.realtime.rawValue {
             let envSummary = realtimeContext.summary
-            if envSummary != "无" {
-                contextSections.append("【当前环境】\n\(envSummary)")
+            if envSummary != L("prompt.env_none") {
+                contextSections.append("\(L("prompt.env_header"))\n\(envSummary)")
             }
         }
 
         // App-specific prompt override — always included
         if let appPrompt = appPrompt, !appPrompt.isEmpty {
-            contextSections.append("【应用专属指令】\n\(appPrompt)")
+            contextSections.append("\(L("prompt.app_specific_header"))\n\(appPrompt)")
         }
 
         if !contextSections.isEmpty {
-            sections.append("以下为优先级从高到低的上下文环境，供转写过程参考：")
+            sections.append(L("prompt.context_intro"))
             sections.append(contentsOf: contextSections)
         }
 
@@ -274,7 +278,7 @@ class ContextProfileService: ObservableObject {
             var inputText = sanitizeText(texts.joined(separator: "\n"))
 
             if !correctionDiffs.isEmpty {
-                inputText += "\n\n---用户纠正记录（高置信度信息）---\n" + correctionDiffs
+                inputText += "\n\n\(L("prompt.correction_label"))\n" + correctionDiffs
             }
 
             let prompt = snapshotGenerationPrompt()
@@ -321,7 +325,7 @@ class ContextProfileService: ObservableObject {
             let summaries = snapshots.compactMap { $0.rawJSON }
             guard !summaries.isEmpty else { return }
 
-            var inputText = "近期上下文快照:\n" + summaries.joined(separator: "\n---\n")
+            var inputText = "\(L("prompt.recent_snapshots"))\n" + summaries.joined(separator: "\n---\n")
 
             let recordingFetch: NSFetchRequest<Recording> = Recording.fetchRequest()
             recordingFetch.predicate = NSPredicate(format: "createdAt >= %@ AND userEditedText != nil", sevenDaysAgo as NSDate)
@@ -329,7 +333,7 @@ class ContextProfileService: ObservableObject {
             if let editedRecordings = try? context.fetch(recordingFetch), !editedRecordings.isEmpty {
                 let correctionDiffs = buildCorrectionDiffs(from: editedRecordings)
                 if !correctionDiffs.isEmpty {
-                    inputText += "\n\n---用户纠正记录（高置信度）---\n" + correctionDiffs
+                    inputText += "\n\n\(L("prompt.correction_label_short"))\n" + correctionDiffs
                 }
             }
 
@@ -338,7 +342,7 @@ class ContextProfileService: ObservableObject {
                 encoder.outputFormatting = .prettyPrinted
                 if let currentJSON = try? encoder.encode(current),
                    let jsonStr = String(data: currentJSON, encoding: .utf8) {
-                    inputText += "\n\n当前用户画像:\n\(jsonStr)"
+                    inputText += "\n\n\(L("prompt.current_profile_label"))\n\(jsonStr)"
                 }
             }
 
@@ -432,42 +436,11 @@ class ContextProfileService: ObservableObject {
     // MARK: - Prompts
 
     private func snapshotGenerationPrompt() -> String {
-        """
-        你是一个上下文分析助手。分析以下语音转写文本，提取结构化信息。
-
-        输入可能包含两部分：
-        1. 语音转写文本（用户最近的语音输入）
-        2. 用户纠正记录（用户手动修改了转写文本的部分，这是高置信度信息）
-
-        特别注意：用户纠正记录中的"添加"词汇是用户确认的正确用词，应当优先收录到实体词云和近期词汇中。
-
-        分析维度：
-        1. 当前活动场景（如"代码调试"、"文档撰写"）
-        2. 领域聚焦（技术栈、学科等）
-        3. 实体词云（项目名、变量名、人名等专有名词，优先从用户纠正中提取）
-        4. 近期高频词汇（优先从用户纠正中提取正确用词）
-        5. 当前意图
-
-        输出严格JSON格式（不要包含其他内容）：
-        {"topic":"...","currentIntent":"...","domainFocus":"...","recentVocabulary":["..."],"entityCloud":["..."]}
-        """
+        L("prompt.snapshot_system")
     }
 
     private func profileGenerationPrompt() -> String {
-        """
-        你是一个用户画像分析师。根据以下近期上下文快照，生成/更新用户长期画像。
-
-        输入包含上下文快照的JSON摘要。快照中的实体词云和近期词汇可能来自用户手动纠正，这些是高置信度信息，应当优先纳入画像。
-
-        分析维度：
-        1. 职业身份推断
-        2. 主要技术领域/知识领域
-        3. 语言习惯（中英混用程度、口语特征）
-        4. 固定实体（常提到的人名、项目名、工具名——特别关注跨多个快照重复出现的实体）
-
-        输出严格JSON格式（不要包含其他内容）：
-        {"identity":"...","primaryDomains":["..."],"languageHabits":"...","fixedEntities":["..."]}
-        """
+        L("prompt.profile_system")
     }
 
     // MARK: - JSON Parsing

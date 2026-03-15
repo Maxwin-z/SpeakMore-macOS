@@ -108,14 +108,14 @@ func nxDeviceMaskForKeyCode(_ keyCode: UInt16) -> UInt {
 
 func modifierKeyCodeToString(_ keyCode: UInt16) -> String {
     switch Int(keyCode) {
-    case kVK_Command:       return "左⌘"
-    case kVK_RightCommand:  return "右⌘"
-    case kVK_Shift:         return "左⇧"
-    case kVK_RightShift:    return "右⇧"
-    case kVK_Option:        return "左⌥"
-    case kVK_RightOption:   return "右⌥"
-    case kVK_Control:       return "左⌃"
-    case kVK_RightControl:  return "右⌃"
+    case kVK_Command:       return L("hotkey.left_cmd")
+    case kVK_RightCommand:  return L("hotkey.right_cmd")
+    case kVK_Shift:         return L("hotkey.left_shift")
+    case kVK_RightShift:    return L("hotkey.right_shift")
+    case kVK_Option:        return L("hotkey.left_opt")
+    case kVK_RightOption:   return L("hotkey.right_opt")
+    case kVK_Control:       return L("hotkey.left_ctrl")
+    case kVK_RightControl:  return L("hotkey.right_ctrl")
     default: return "Mod\(keyCode)"
     }
 }
@@ -154,14 +154,14 @@ func keyCodeToString(_ keyCode: UInt16) -> String {
     case kVK_DownArrow:  return "↓"
     case kVK_LeftArrow:  return "←"
     case kVK_RightArrow: return "→"
-    case kVK_Command:       return "左⌘"
-    case kVK_RightCommand:  return "右⌘"
-    case kVK_Shift:         return "左⇧"
-    case kVK_RightShift:    return "右⇧"
-    case kVK_Option:        return "左⌥"
-    case kVK_RightOption:   return "右⌥"
-    case kVK_Control:       return "左⌃"
-    case kVK_RightControl:  return "右⌃"
+    case kVK_Command:       return L("hotkey.left_cmd")
+    case kVK_RightCommand:  return L("hotkey.right_cmd")
+    case kVK_Shift:         return L("hotkey.left_shift")
+    case kVK_RightShift:    return L("hotkey.right_shift")
+    case kVK_Option:        return L("hotkey.left_opt")
+    case kVK_RightOption:   return L("hotkey.right_opt")
+    case kVK_Control:       return L("hotkey.left_ctrl")
+    case kVK_RightControl:  return L("hotkey.right_ctrl")
     default:
         return characterForKeyCode(keyCode)
     }
@@ -212,14 +212,14 @@ func buildHotkeyDisplayString(keyCode: UInt16, modifiers: NSEvent.ModifierFlags)
 /// Order follows macOS convention: ⌃ ⌥ ⇧ ⌘
 func deviceMaskToSymbols(_ mask: UInt) -> String {
     var parts: [String] = []
-    if mask & NXDeviceMask.leftControl  != 0 { parts.append("左⌃") }
-    if mask & NXDeviceMask.rightControl != 0 { parts.append("右⌃") }
-    if mask & NXDeviceMask.leftOption   != 0 { parts.append("左⌥") }
-    if mask & NXDeviceMask.rightOption  != 0 { parts.append("右⌥") }
-    if mask & NXDeviceMask.leftShift    != 0 { parts.append("左⇧") }
-    if mask & NXDeviceMask.rightShift   != 0 { parts.append("右⇧") }
-    if mask & NXDeviceMask.leftCommand  != 0 { parts.append("左⌘") }
-    if mask & NXDeviceMask.rightCommand != 0 { parts.append("右⌘") }
+    if mask & NXDeviceMask.leftControl  != 0 { parts.append(L("hotkey.left_ctrl")) }
+    if mask & NXDeviceMask.rightControl != 0 { parts.append(L("hotkey.right_ctrl")) }
+    if mask & NXDeviceMask.leftOption   != 0 { parts.append(L("hotkey.left_opt")) }
+    if mask & NXDeviceMask.rightOption  != 0 { parts.append(L("hotkey.right_opt")) }
+    if mask & NXDeviceMask.leftShift    != 0 { parts.append(L("hotkey.left_shift")) }
+    if mask & NXDeviceMask.rightShift   != 0 { parts.append(L("hotkey.right_shift")) }
+    if mask & NXDeviceMask.leftCommand  != 0 { parts.append(L("hotkey.left_cmd")) }
+    if mask & NXDeviceMask.rightCommand != 0 { parts.append(L("hotkey.right_cmd")) }
     return parts.joined(separator: " ")
 }
 
