@@ -93,6 +93,58 @@ class ContextProfileService: ObservableObject {
         persistProfileChanges()
     }
 
+    /// Build system prompt with a specific context level for re-recognition.
+    func buildSystemPrompt(
+        contextLevel: ContextLevel,
+        sourceApp: String?,
+        glossaryTerms: [String] = []
+    ) -> String {
+        var sections: [String] = []
+
+        sections.append("你是一个语音转写助手。请将用户的语音内容准确转写为文字，保持原意，修正明显的口语错误和语气词，输出自然流畅的书面文本。直接输出转写结果，不要添加任何解释。")
+
+        if !glossaryTerms.isEmpty {
+            sections.append("【术语表（最高优先级）】\n以下术语在转写时必须使用，不可替换为其他写法：\n\(glossaryTerms.joined(separator: "、"))")
+        }
+
+        if contextLevel.rawValue >= ContextLevel.longTerm.rawValue, let profile = activeProfile {
+            var profileParts: [String] = []
+            if let id = profile.identity { profileParts.append("用户身份: \(id)") }
+            if let domains = profile.primaryDomains, !domains.isEmpty {
+                profileParts.append("主要领域: \(domains.joined(separator: "、"))")
+            }
+            if let habits = profile.languageHabits { profileParts.append("语言习惯: \(habits)") }
+            if let entities = profile.fixedEntities, !entities.isEmpty {
+                profileParts.append("常用实体: \(entities.joined(separator: "、"))")
+            }
+            if !profileParts.isEmpty {
+                sections.append("【用户画像】\n\(profileParts.joined(separator: "\n"))")
+            }
+        }
+
+        if contextLevel.rawValue >= ContextLevel.shortTerm.rawValue, let snapshot = latestSnapshot {
+            var snapParts: [String] = []
+            if let topic = snapshot.topic { snapParts.append("当前话题: \(topic)") }
+            if let intent = snapshot.currentIntent { snapParts.append("当前意图: \(intent)") }
+            if let domain = snapshot.domainFocus { snapParts.append("领域聚焦: \(domain)") }
+            if let vocab = snapshot.recentVocabulary, !vocab.isEmpty {
+                snapParts.append("近期词汇: \(vocab.joined(separator: "、"))")
+            }
+            if let entities = snapshot.entityCloud, !entities.isEmpty {
+                snapParts.append("实体词云: \(entities.joined(separator: "、"))")
+            }
+            if !snapParts.isEmpty {
+                sections.append("【近期上下文】\n\(snapParts.joined(separator: "\n"))")
+            }
+        }
+
+        if contextLevel.rawValue >= ContextLevel.realtime.rawValue, let app = sourceApp, !app.isEmpty {
+            sections.append("【当前环境】\n应用: \(app)")
+        }
+
+        return sections.joined(separator: "\n\n")
+    }
+
     /// Build the enhanced system prompt combining all context layers.
     func buildEnhancedSystemPrompt(
         userPrompt: String?,

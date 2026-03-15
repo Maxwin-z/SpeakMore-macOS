@@ -12,7 +12,7 @@ struct HistoryScreen: View {
 
             if let id = selectedId,
                let recording = historyStore.recordings.first(where: { $0.objectID == id }) {
-                historyDetail(recording)
+                HistoryDetailView(recording: recording, historyStore: historyStore, selectedId: $selectedId)
             } else {
                 emptyDetail
             }
@@ -57,7 +57,7 @@ struct HistoryScreen: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List(historyStore.recordings, id: \.objectID, selection: $selectedId) { recording in
-                    RecordingRow(recording: recording, isSelected: selectedId == recording.objectID)
+                    RecordingRow(recording: recording, isSelected: selectedId == recording.objectID, historyStore: historyStore)
                         .tag(recording.objectID)
                         .contextMenu {
                             Button {
@@ -85,29 +85,42 @@ struct HistoryScreen: View {
         }
     }
 
-    // MARK: - Detail
+    private var emptyDetail: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "doc.text.magnifyingglass")
+                .font(.largeTitle)
+                .foregroundStyle(.tertiary)
+            Text("选择一条记录查看详情")
+                .font(.subheadline)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
 
-    private func historyDetail(_ recording: Recording) -> some View {
+// MARK: - Detail View
+
+private struct HistoryDetailView: View {
+    let recording: Recording
+    @ObservedObject var historyStore: HistoryStore
+    @Binding var selectedId: NSManagedObjectID?
+
+    @StateObject private var multimodalStore = MultimodalConfigStore.shared
+    @State private var selectedModel: AvailableModel?
+    @State private var contextLevel: ContextLevel = .none
+
+    var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(recording.title ?? "无标题")
-                        .font(.title2.weight(.semibold))
-                        .lineLimit(2)
+                // Header
+                headerSection
 
-                    HStack(spacing: 12) {
-                        if let date = recording.createdAt {
-                            Label(formatDate(date), systemImage: "calendar")
-                        }
-                        Label(formatDuration(recording.durationSeconds), systemImage: "clock")
-                        if let app = recording.sourceApp, !app.isEmpty {
-                            Label(app, systemImage: "app")
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // Audio player
+                if recording.audioFilePath != nil {
+                    audioPlayerSection
                 }
 
+                // Model info
                 if let model = recording.sttModelName {
                     HStack(spacing: 4) {
                         Image(systemName: "cpu")
@@ -123,67 +136,314 @@ struct HistoryScreen: View {
 
                 Divider()
 
-                let displayText = recording.userEditedText ?? recording.originalText ?? ""
+                // Original transcription
+                originalTranscriptionSection
 
-                GroupBox("转写内容") {
+                // Re-recognition results
+                reRecognitionResultsSection
+
+                Divider()
+
+                // Re-recognition controls
+                if recording.audioFilePath != nil {
+                    reRecognitionSection
+                }
+
+                // Actions
+                actionsSection
+            }
+            .padding(24)
+        }
+        .onAppear {
+            if selectedModel == nil {
+                selectedModel = multimodalStore.currentAvailableModel
+            }
+        }
+    }
+
+    // MARK: - Header
+
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(recording.title ?? "无标题")
+                .font(.title2.weight(.semibold))
+                .lineLimit(2)
+
+            HStack(spacing: 12) {
+                if let date = recording.createdAt {
+                    Label(formatDate(date), systemImage: "calendar")
+                }
+                Label(formatDuration(recording.durationSeconds), systemImage: "clock")
+                if let app = recording.sourceApp, !app.isEmpty {
+                    Label(app, systemImage: "app")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: - Audio Player
+
+    private var audioPlayerSection: some View {
+        let isThisPlaying = historyStore.playingRecordingId == recording.id
+
+        return HStack(spacing: 12) {
+            Button {
+                if isThisPlaying {
+                    historyStore.stopAudio()
+                } else {
+                    historyStore.playAudio(for: recording)
+                }
+            } label: {
+                Image(systemName: isThisPlaying ? "stop.circle.fill" : "play.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(isThisPlaying ? .red : .accentColor)
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 4) {
+                // Progress bar
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.primary.opacity(0.1))
+                            .frame(height: 4)
+
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(isThisPlaying ? Color.accentColor : Color.clear)
+                            .frame(width: geo.size.width * (isThisPlaying ? historyStore.playbackProgress : 0), height: 4)
+                    }
+                }
+                .frame(height: 4)
+
+                Text(formatDuration(recording.durationSeconds))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.primary.opacity(0.03))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+        )
+    }
+
+    // MARK: - Original Transcription
+
+    private var originalTranscriptionSection: some View {
+        let displayText = recording.userEditedText ?? recording.originalText ?? ""
+
+        return VStack(alignment: .leading, spacing: 8) {
+            GroupBox {
+                VStack(alignment: .leading) {
+                    Text(displayText)
+                        .font(.body)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(4)
+            } label: {
+                HStack {
+                    Text("转写内容")
+                    Spacer()
+                    if let model = recording.sttModelName {
+                        Text(model)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+
+            if let userEdited = recording.userEditedText, !userEdited.isEmpty,
+               let original = recording.originalText, !original.isEmpty,
+               userEdited != original {
+                GroupBox("原始转写") {
                     VStack(alignment: .leading) {
-                        Text(displayText)
+                        Text(original)
                             .font(.body)
                             .textSelection(.enabled)
+                            .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(4)
                 }
-
-                if let userEdited = recording.userEditedText, !userEdited.isEmpty,
-                   let original = recording.originalText, !original.isEmpty,
-                   userEdited != original {
-                    GroupBox("原始转写") {
-                        VStack(alignment: .leading) {
-                            Text(original)
-                                .font(.body)
-                                .textSelection(.enabled)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .padding(4)
-                    }
-                }
-
-                HStack(spacing: 12) {
-                    Button {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(displayText, forType: .string)
-                    } label: {
-                        Label("复制文本", systemImage: "doc.on.doc")
-                    }
-                    .buttonStyle(.bordered)
-
-                    Spacer()
-
-                    Button(role: .destructive) {
-                        selectedId = nil
-                        historyStore.deleteRecording(recording)
-                    } label: {
-                        Label("删除", systemImage: "trash")
-                    }
-                    .buttonStyle(.bordered)
-                }
             }
-            .padding(24)
         }
     }
 
-    private var emptyDetail: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(.largeTitle)
-                .foregroundStyle(.tertiary)
-            Text("选择一条记录查看详情")
-                .font(.subheadline)
-                .foregroundStyle(.tertiary)
+    // MARK: - Re-recognition Results
+
+    private var reRecognitionResultsSection: some View {
+        let results = historyStore.fetchTranscriptionResults(for: recording)
+
+        return Group {
+            if !results.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("重新识别记录")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+
+                    ForEach(results, id: \.objectID) { result in
+                        TranscriptionResultCard(result: result, onDelete: {
+                            historyStore.deleteTranscriptionResult(result)
+                        })
+                    }
+                }
+            }
+
+            if historyStore.isReRecognizing {
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("正在识别...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if !historyStore.reRecognizingText.isEmpty {
+                            Text(historyStore.reRecognizingText)
+                                .font(.body)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
+                        }
+                    }
+                    .padding(4)
+                } label: {
+                    Text("识别中...")
+                }
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Re-recognition Controls
+
+    private var reRecognitionSection: some View {
+        let models = multimodalStore.availableModels
+
+        return GroupBox {
+            VStack(alignment: .leading, spacing: 14) {
+                // Model picker
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("选择模型")
+                        .font(.subheadline.weight(.medium))
+
+                    if models.isEmpty {
+                        Text("请先在设置中配置 API Key")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    } else {
+                        Picker("模型", selection: $selectedModel) {
+                            ForEach(models) { model in
+                                Text(model.displayName)
+                                    .tag(Optional(model))
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                    }
+                }
+
+                // Context level slider
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("上下文级别")
+                            .font(.subheadline.weight(.medium))
+                        Spacer()
+                        Text(contextLevel.displayName)
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(.accentColor)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.1), in: Capsule())
+                    }
+
+                    Slider(
+                        value: Binding(
+                            get: { Double(contextLevel.rawValue) },
+                            set: { contextLevel = ContextLevel(rawValue: Int($0)) ?? .none }
+                        ),
+                        in: 0...3,
+                        step: 1
+                    )
+
+                    HStack {
+                        ForEach(ContextLevel.allCases) { level in
+                            VStack(spacing: 2) {
+                                Circle()
+                                    .fill(contextLevel.rawValue >= level.rawValue ? Color.accentColor : Color.primary.opacity(0.15))
+                                    .frame(width: 6, height: 6)
+                                Text(level.displayName)
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(contextLevel == level ? .primary : .tertiary)
+                            }
+                            if level != ContextLevel.allCases.last {
+                                Spacer()
+                            }
+                        }
+                    }
+
+                    Text(contextLevel.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                // Re-recognize button
+                Button {
+                    guard let model = selectedModel else { return }
+                    Task {
+                        await historyStore.reRecognize(
+                            recording: recording,
+                            model: model,
+                            contextLevel: contextLevel
+                        )
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.clockwise")
+                        Text("重新识别")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(selectedModel == nil || historyStore.isReRecognizing || models.isEmpty)
+            }
+        } label: {
+            Label("重新识别", systemImage: "arrow.triangle.2.circlepath")
+        }
+    }
+
+    // MARK: - Actions
+
+    private var actionsSection: some View {
+        let displayText = recording.userEditedText ?? recording.originalText ?? ""
+
+        return HStack(spacing: 12) {
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(displayText, forType: .string)
+            } label: {
+                Label("复制文本", systemImage: "doc.on.doc")
+            }
+            .buttonStyle(.bordered)
+
+            Spacer()
+
+            Button(role: .destructive) {
+                selectedId = nil
+                historyStore.deleteRecording(recording)
+            } label: {
+                Label("删除", systemImage: "trash")
+            }
+            .buttonStyle(.bordered)
+        }
     }
 
     // MARK: - Helpers
@@ -207,21 +467,106 @@ struct HistoryScreen: View {
     }
 }
 
+// MARK: - Transcription Result Card
+
+private struct TranscriptionResultCard: View {
+    let result: TranscriptionResult
+    let onDelete: () -> Void
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(result.text ?? "")
+                    .font(.body)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 12) {
+                    Button {
+                        let text = result.text ?? ""
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(text, forType: .string)
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.borderless)
+
+                    Spacer()
+
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+            .padding(4)
+        } label: {
+            HStack(spacing: 8) {
+                if let provider = result.providerName, let model = result.modelName {
+                    Text("\(provider) - \(model)")
+                        .font(.caption2.weight(.medium))
+                } else if let model = result.modelName {
+                    Text(model)
+                        .font(.caption2.weight(.medium))
+                }
+
+                let level = ContextLevel(rawValue: Int(result.contextLevel)) ?? .none
+                Text(level.displayName)
+                    .font(.caption2)
+                    .foregroundColor(.accentColor)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(Color.accentColor.opacity(0.1), in: Capsule())
+
+                Spacer()
+
+                if let date = result.createdAt {
+                    Text(formatResultDate(date))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+    }
+
+    private func formatResultDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM/dd HH:mm"
+        return formatter.string(from: date)
+    }
+}
+
 // MARK: - Recording Row
 
 private struct RecordingRow: View {
     let recording: Recording
     let isSelected: Bool
+    @ObservedObject var historyStore: HistoryStore
 
     private var displayText: String {
         recording.userEditedText ?? recording.originalText ?? ""
     }
 
+    private var hasAudio: Bool {
+        recording.audioFilePath != nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(recording.title ?? String(displayText.prefix(50)))
-                .font(.callout.weight(isSelected ? .semibold : .regular))
-                .lineLimit(2)
+            HStack(spacing: 6) {
+                if hasAudio {
+                    Image(systemName: "waveform")
+                        .font(.caption2)
+                        .foregroundColor(.accentColor)
+                }
+                Text(recording.title ?? String(displayText.prefix(50)))
+                    .font(.callout.weight(isSelected ? .semibold : .regular))
+                    .lineLimit(2)
+            }
 
             HStack(spacing: 8) {
                 HStack(spacing: 3) {
@@ -236,6 +581,18 @@ private struct RecordingRow: View {
                     Text(app)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                }
+
+                // Show re-recognition count
+                let resultCount = historyStore.fetchTranscriptionResults(for: recording).count
+                if resultCount > 0 {
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 8))
+                        Text("\(resultCount)")
+                            .font(.caption2)
+                    }
+                    .foregroundColor(.accentColor)
                 }
 
                 Spacer()

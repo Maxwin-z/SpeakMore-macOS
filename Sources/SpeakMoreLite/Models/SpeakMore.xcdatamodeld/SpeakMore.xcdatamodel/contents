@@ -22,6 +22,16 @@
         <attribute name="sttModelName" optional="YES" attributeType="String"/>
         <attribute name="title" optional="YES" attributeType="String"/>
         <attribute name="userEditedText" optional="YES" attributeType="String"/>
+        <relationship name="transcriptionResults" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="TranscriptionResult" inverseName="recording" inverseEntity="TranscriptionResult"/>
+    </entity>
+    <entity name="TranscriptionResult" representedClassName="TranscriptionResult" syncable="YES" codeGenerationType="class">
+        <attribute name="contextLevel" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="modelName" optional="YES" attributeType="String"/>
+        <attribute name="providerName" optional="YES" attributeType="String"/>
+        <attribute name="text" attributeType="String" defaultValueString=""/>
+        <relationship name="recording" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Recording" inverseName="transcriptionResults" inverseEntity="Recording"/>
     </entity>
     <entity name="UserProfile" representedClassName="UserProfile" syncable="YES" codeGenerationType="class">
         <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>

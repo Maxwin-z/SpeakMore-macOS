@@ -74,6 +74,57 @@ struct MultimodalModel: Identifiable, Codable, Hashable {
     let description: String
 }
 
+/// A fully resolved available model (provider + model + has API key)
+struct AvailableModel: Identifiable, Hashable {
+    let provider: MultimodalProvider
+    let model: MultimodalModel
+
+    var id: String { "\(provider.rawValue):\(model.id)" }
+
+    var displayName: String {
+        "\(provider.displayName) - \(model.displayName)"
+    }
+
+    /// Build a MultimodalConfig targeting this specific model
+    func buildConfig(from base: MultimodalConfig) -> MultimodalConfig {
+        MultimodalConfig(
+            provider: provider,
+            apiKeys: base.apiKeys,
+            endpoint: provider.defaultEndpoint,
+            selectedModelId: model.id,
+            customModelId: ""
+        )
+    }
+}
+
+/// Context level for re-recognition
+enum ContextLevel: Int, CaseIterable, Identifiable {
+    case none = 0
+    case realtime = 1
+    case shortTerm = 2
+    case longTerm = 3
+
+    var id: Int { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .none: return "无上下文"
+        case .realtime: return "ID 上下文"
+        case .shortTerm: return "短期上下文"
+        case .longTerm: return "长期上下文"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .none: return "仅基础转写指令"
+        case .realtime: return "加入来源应用信息"
+        case .shortTerm: return "加入近期话题和词汇"
+        case .longTerm: return "加入用户画像和长期偏好"
+        }
+    }
+}
+
 /// Persisted multimodal API configuration
 struct MultimodalConfig: Codable {
     var provider: MultimodalProvider

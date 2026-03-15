@@ -1,5 +1,6 @@
 import Foundation
 import CoreData
+import AVFoundation
 
 @MainActor
 class HistoryStore: ObservableObject {
@@ -7,7 +8,18 @@ class HistoryStore: ObservableObject {
 
     @Published var recordings: [Recording] = []
 
+    // Audio playback
+    @Published var playingRecordingId: UUID?
+    @Published var playbackProgress: Double = 0
+    private var audioPlayer: AVAudioPlayer?
+    private var playbackTimer: Timer?
+
+    // Re-recognition state
+    @Published var isReRecognizing = false
+    @Published var reRecognizingText = ""
+
     private let context = PersistenceController.shared.container.viewContext
+    private let multimodalService = MultimodalService()
 
     private init() {
         fetchRecordings()
@@ -86,6 +98,164 @@ class HistoryStore: ObservableObject {
         } catch {
             NSLog("[HistoryStore] Update userEditedText error: \(error)")
         }
+    }
+
+    // MARK: - Audio Playback
+
+    func playAudio(for recording: Recording) {
+        guard let path = recording.audioFilePath else { return }
+        let url = URL(fileURLWithPath: path)
+        guard FileManager.default.fileExists(atPath: path) else {
+            NSLog("[HistoryStore] Audio file not found: \(path)")
+            return
+        }
+
+        stopAudio()
+
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.prepareToPlay()
+            player.play()
+            audioPlayer = player
+            playingRecordingId = recording.id
+
+            playbackTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+                Task { @MainActor in
+                    guard let self = self, let player = self.audioPlayer else { return }
+                    if player.isPlaying {
+                        self.playbackProgress = player.currentTime / max(player.duration, 0.01)
+                    } else {
+                        self.stopAudio()
+                    }
+                }
+            }
+        } catch {
+            NSLog("[HistoryStore] Audio playback error: \(error)")
+        }
+    }
+
+    func stopAudio() {
+        audioPlayer?.stop()
+        audioPlayer = nil
+        playbackTimer?.invalidate()
+        playbackTimer = nil
+        playingRecordingId = nil
+        playbackProgress = 0
+    }
+
+    var isPlaying: Bool {
+        audioPlayer?.isPlaying == true
+    }
+
+    // MARK: - Transcription Results
+
+    func fetchTranscriptionResults(for recording: Recording) -> [TranscriptionResult] {
+        guard let results = recording.transcriptionResults as? Set<TranscriptionResult> else {
+            return []
+        }
+        return results.sorted { ($0.createdAt ?? .distantPast) < ($1.createdAt ?? .distantPast) }
+    }
+
+    func reRecognize(
+        recording: Recording,
+        model: AvailableModel,
+        contextLevel: ContextLevel
+    ) async {
+        guard let audioPath = recording.audioFilePath,
+              FileManager.default.fileExists(atPath: audioPath) else {
+            NSLog("[HistoryStore] No audio file for re-recognition")
+            return
+        }
+
+        isReRecognizing = true
+        reRecognizingText = ""
+
+        defer {
+            isReRecognizing = false
+        }
+
+        // Load audio samples from WAV file
+        guard let samples = loadAudioSamples(from: audioPath) else {
+            NSLog("[HistoryStore] Failed to load audio samples")
+            return
+        }
+
+        // Build config for the selected model
+        let baseConfig = MultimodalConfigStore.shared.config
+        let config = model.buildConfig(from: baseConfig)
+
+        // Build system prompt with context level
+        let glossaryTerms = PromptStore.shared.config.glossaryTerms
+        let systemPrompt = ContextProfileService.shared.buildSystemPrompt(
+            contextLevel: contextLevel,
+            sourceApp: recording.sourceApp,
+            glossaryTerms: glossaryTerms
+        )
+
+        NSLog("[HistoryStore] Re-recognizing: model=\(model.displayName), contextLevel=\(contextLevel.displayName)")
+
+        var fullText = ""
+        do {
+            for try await chunk in multimodalService.stream(audioSamples: samples, systemPrompt: systemPrompt, config: config) {
+                fullText += chunk
+                reRecognizingText = fullText
+            }
+        } catch {
+            NSLog("[HistoryStore] Re-recognition error: \(error)")
+            if fullText.isEmpty {
+                reRecognizingText = "识别失败: \(error.localizedDescription)"
+                return
+            }
+        }
+
+        // Save as TranscriptionResult
+        let result = TranscriptionResult(context: context)
+        result.id = UUID()
+        result.createdAt = Date()
+        result.text = fullText
+        result.modelName = model.model.displayName
+        result.providerName = model.provider.displayName
+        result.contextLevel = Int16(contextLevel.rawValue)
+        result.recording = recording
+
+        do {
+            try context.save()
+            objectWillChange.send()
+            NSLog("[HistoryStore] Saved re-recognition result")
+        } catch {
+            NSLog("[HistoryStore] Save re-recognition error: \(error)")
+        }
+    }
+
+    func deleteTranscriptionResult(_ result: TranscriptionResult) {
+        context.delete(result)
+        do {
+            try context.save()
+            objectWillChange.send()
+        } catch {
+            NSLog("[HistoryStore] Delete transcription result error: \(error)")
+        }
+    }
+
+    // MARK: - Load Audio Samples from WAV
+
+    private func loadAudioSamples(from path: String) -> [Float]? {
+        let url = URL(fileURLWithPath: path)
+        guard let data = try? Data(contentsOf: url) else { return nil }
+
+        // Parse WAV header (44 bytes) and extract PCM samples
+        guard data.count > 44 else { return nil }
+        let audioData = data.subdata(in: 44..<data.count)
+        let sampleCount = audioData.count / 2 // 16-bit samples
+
+        var samples = [Float](repeating: 0, count: sampleCount)
+        audioData.withUnsafeBytes { buffer in
+            let int16Buffer = buffer.bindMemory(to: Int16.self)
+            for i in 0..<sampleCount {
+                samples[i] = Float(int16Buffer[i]) / 32767.0
+            }
+        }
+        return samples
     }
 
     // MARK: - Audio File Saving
