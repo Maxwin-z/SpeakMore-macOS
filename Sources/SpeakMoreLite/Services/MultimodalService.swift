@@ -197,13 +197,7 @@ class MultimodalService {
                         messages.append(["role": "system", "content": systemPrompt])
                     }
 
-                    // DashScope models require data URI prefix for base64 audio
-                    let audioData: String
-                    if config.provider == .dashscope {
-                        audioData = "data:;base64,\(audioBase64)"
-                    } else {
-                        audioData = audioBase64
-                    }
+                    let audioData = "data:;base64,\(audioBase64)"
 
                     messages.append([
                         "role": "user",

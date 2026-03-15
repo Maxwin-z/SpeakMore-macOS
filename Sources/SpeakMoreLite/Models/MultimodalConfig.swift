@@ -74,6 +74,7 @@ enum MultimodalProvider: String, Codable, CaseIterable, Identifiable {
     var usesGeminiFormat: Bool {
         self == .gemini
     }
+
 }
 
 /// A multimodal model option

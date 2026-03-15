@@ -5,6 +5,16 @@ options:
     macOS: "14.0"
   generateEmptyDirectories: true
 
+schemes:
+  SpeakMoreLite:
+    build:
+      targets:
+        SpeakMoreLite: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
 targets:
   SpeakMoreLite:
     type: application
