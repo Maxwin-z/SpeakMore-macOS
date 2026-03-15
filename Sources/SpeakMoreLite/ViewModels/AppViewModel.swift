@@ -446,7 +446,7 @@ class AppViewModel: ObservableObject {
         floatingWidgetPanel.onClicked = { [weak self] in
             Task { @MainActor in self?.toggleHistoryPopover() }
         }
-        floatingWidgetPanel.onPositionChanged = { [weak self] origin in
+        floatingWidgetPanel.onPositionChanged = { origin in
             Task { @MainActor in
                 UserDefaults.standard.set(Double(origin.x), forKey: "SpeakMore.widgetPositionX")
                 UserDefaults.standard.set(Double(origin.y), forKey: "SpeakMore.widgetPositionY")
