@@ -247,7 +247,7 @@ struct RecordingOverlayContent: View {
 
             switch overlayState.mode {
             case .recording:
-                EqualizerView(level: CGFloat(audioLevel.level))
+                WaveformView(level: CGFloat(audioLevel.level))
             case .transcribing:
                 TranscribingView(progress: overlayState.transcriptionProgress)
             case .loadingHint(let message):
@@ -267,67 +267,94 @@ struct RecordingOverlayContent: View {
     }
 }
 
-struct EqualizerView: View {
+struct WaveformView: View {
     let level: CGFloat
 
-    private let barCount = 15
-    private let barWidth: CGFloat = 2
-    private let barSpacing: CGFloat = 2
-    private let maxBarHeight: CGFloat = 30
-    private let minBarHeight: CGFloat = 3
-
-    @State private var randomFactors: [CGFloat] = (0..<15).map { _ in
-        let raw = CGFloat.random(in: 0...1)
-        return 0.15 + pow(raw, 2.5) * 0.85
-    }
-
-    private let timer = Timer.publish(every: 0.12, on: .main, in: .common).autoconnect()
-
-    private static func nextRandomFactor() -> CGFloat {
-        let raw = CGFloat.random(in: 0...1)
-        return 0.15 + pow(raw, 2.5) * 0.85
-    }
+    @State private var displayLevel: CGFloat = 0
 
     var body: some View {
-        HStack(alignment: .center, spacing: barSpacing) {
-            ForEach(0..<barCount, id: \.self) { index in
-                EqualizerBar(
-                    level: level,
-                    weight: randomFactors[index],
-                    minHeight: minBarHeight,
-                    maxHeight: maxBarHeight
-                )
-                .frame(width: barWidth)
+        TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { timeline in
+            let time = timeline.date.timeIntervalSinceReferenceDate
+
+            Canvas { ctx, size in
+                drawWaveform(in: ctx, size: size, time: time)
             }
-        }
-        .onReceive(timer) { _ in
-            for i in 0..<barCount {
-                randomFactors[i] = Self.nextRandomFactor()
+            .onChange(of: timeline.date) { _, _ in
+                let normalizedTarget = min(max(level / 0.02, 0), 1)
+                let factor: CGFloat = normalizedTarget > displayLevel ? 0.3 : 0.12
+                displayLevel += (normalizedTarget - displayLevel) * factor
             }
         }
     }
-}
 
-struct EqualizerBar: View {
-    let level: CGFloat
-    let weight: CGFloat
-    let minHeight: CGFloat
-    let maxHeight: CGFloat
+    private func drawWaveform(in ctx: GraphicsContext, size: CGSize, time: Double) {
+        let midY = size.height / 2
+        let width = size.width
+        let maxAmplitude = midY * 0.85
 
-    private var normalizedLevel: CGFloat {
-        min(max(level / 0.02, 0), 1)
+        // Subtle idle breathing so the waveform is never fully static
+        let idleBreath = 0.03 + 0.02 * sin(time * 1.5)
+        let effectiveLevel = max(Double(displayLevel), idleBreath)
+
+        // Wave layers: (speed, frequency, amplitude scale, opacity)
+        let layers: [(Double, Double, Double, Double)] = [
+            (1.8, 1.2, 1.0, 0.5),
+            (2.5, 1.7, 0.7, 0.35),
+            (3.2, 2.3, 0.45, 0.2),
+        ]
+
+        // Glow layer behind the main wave
+        if let first = layers.first {
+            let (speed, freq, ampScale, _) = first
+            let path = wavePath(width: width, midY: midY,
+                                amplitude: effectiveLevel * maxAmplitude * ampScale,
+                                frequency: freq, phase: time * speed)
+            ctx.drawLayer { glowCtx in
+                glowCtx.addFilter(.blur(radius: 4))
+                glowCtx.fill(path, with: .color(.white.opacity(0.25 * effectiveLevel)))
+            }
+        }
+
+        // Draw each wave layer
+        for (speed, freq, ampScale, opacity) in layers {
+            let amp = effectiveLevel * maxAmplitude * ampScale
+            let path = wavePath(width: width, midY: midY,
+                                amplitude: amp, frequency: freq, phase: time * speed)
+            ctx.fill(path, with: .color(.white.opacity(opacity)))
+        }
     }
 
-    private var barHeight: CGFloat {
-        let target = minHeight + (maxHeight - minHeight) * normalizedLevel * weight
-        return max(target, minHeight)
-    }
+    private func wavePath(width: CGFloat, midY: CGFloat,
+                          amplitude: CGFloat, frequency: Double, phase: Double) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: midY))
 
-    var body: some View {
-        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-            .fill(.white)
-            .frame(height: barHeight)
-            .animation(.easeInOut(duration: 0.12), value: barHeight)
+        // Upper contour
+        for x in stride(from: CGFloat(0), through: width, by: 1) {
+            let t = Double(x / width)
+            let envelope = pow(sin(t * .pi), 1.5)
+            let s1 = sin(t * frequency * .pi * 2 + phase)
+            let s2 = sin(t * frequency * 1.6 * .pi * 2 + phase * 1.3) * 0.35
+            let s3 = sin(t * frequency * 0.6 * .pi * 2 + phase * 0.7) * 0.15
+            let composite = abs(s1 + s2 + s3) / 1.5
+            let y = midY - composite * amplitude * envelope
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+
+        // Lower contour (symmetric mirror)
+        for x in stride(from: width, through: CGFloat(0), by: -1) {
+            let t = Double(x / width)
+            let envelope = pow(sin(t * .pi), 1.5)
+            let s1 = sin(t * frequency * .pi * 2 + phase)
+            let s2 = sin(t * frequency * 1.6 * .pi * 2 + phase * 1.3) * 0.35
+            let s3 = sin(t * frequency * 0.6 * .pi * 2 + phase * 0.7) * 0.15
+            let composite = abs(s1 + s2 + s3) / 1.5
+            let y = midY + composite * amplitude * envelope
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+
+        path.closeSubpath()
+        return path
     }
 }
 
