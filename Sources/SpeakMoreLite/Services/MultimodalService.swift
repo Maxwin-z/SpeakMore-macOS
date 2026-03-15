@@ -197,13 +197,21 @@ class MultimodalService {
                         messages.append(["role": "system", "content": systemPrompt])
                     }
 
+                    // qwen3-omni models require data URI prefix for base64 audio
+                    let audioData: String
+                    if config.provider == .dashscope && modelId.hasPrefix("qwen3") {
+                        audioData = "data:;base64,\(audioBase64)"
+                    } else {
+                        audioData = audioBase64
+                    }
+
                     messages.append([
                         "role": "user",
                         "content": [
                             [
                                 "type": "input_audio",
                                 "input_audio": [
-                                    "data": audioBase64,
+                                    "data": audioData,
                                     "format": "wav"
                                 ]
                             ] as [String: Any],
