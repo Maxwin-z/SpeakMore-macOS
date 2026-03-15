@@ -67,60 +67,70 @@ struct HomeScreen: View {
 
     private var statusCard: some View {
         GroupBox {
-            VStack(spacing: 12) {
-                HStack(spacing: 16) {
-                    statusItem(
-                        icon: "hand.raised.fill",
-                        title: lang.s("home.accessibility"),
-                        isOK: appViewModel.isAccessibilityGranted
-                    )
+            HStack(spacing: 0) {
+                permissionItem(
+                    icon: "hand.raised.fill",
+                    title: lang.s("home.accessibility"),
+                    isGranted: appViewModel.isAccessibilityGranted,
+                    action: {
+                        appViewModel.permissionManager.requestAccessibilityPermission()
+                    }
+                )
 
-                    Divider()
-                        .frame(height: 32)
+                Divider()
+                    .frame(height: 40)
 
-                    statusItem(
-                        icon: "cursorarrow.click.badge.clock",
-                        title: lang.s("home.input_monitoring"),
-                        isOK: appViewModel.permissionManager.isInputMonitoringGranted
-                    )
-
-                    Divider()
-                        .frame(height: 32)
-
-                    statusItem(
-                        icon: "network",
-                        title: lang.s("home.api_config"),
-                        isOK: MultimodalConfigStore.shared.isConfigured
-                    )
-
-                    Divider()
-                        .frame(height: 32)
-
-                    statusItem(
-                        icon: "keyboard",
-                        title: lang.s("home.hotkey"),
-                        isOK: true
-                    )
-                }
+                permissionItem(
+                    icon: "cursorarrow.click.badge.clock",
+                    title: lang.s("home.input_monitoring"),
+                    isGranted: appViewModel.permissionManager.isInputMonitoringGranted,
+                    action: {
+                        appViewModel.permissionManager.requestInputMonitoringPermission()
+                        if !appViewModel.permissionManager.isInputMonitoringGranted {
+                            appViewModel.permissionManager.openInputMonitoringSettings()
+                        }
+                    }
+                )
             }
             .padding(.vertical, 4)
         } label: {
-            Label(lang.s("home.system_status"), systemImage: "checkmark.shield")
+            HStack {
+                Label(lang.s("home.system_status"), systemImage: "checkmark.shield")
+                Spacer()
+                Button {
+                    appViewModel.permissionManager.checkAllPermissions()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .help(lang.s("home.refresh_status"))
+            }
         }
         .padding(.horizontal, 40)
+        .onAppear {
+            appViewModel.permissionManager.checkAllPermissions()
+        }
     }
 
-    private func statusItem(icon: String, title: String, isOK: Bool) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: isOK ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                .foregroundStyle(isOK ? .green : .orange)
+    private func permissionItem(icon: String, title: String, isGranted: Bool, action: @escaping () -> Void) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: isGranted ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                .foregroundStyle(isGranted ? .green : .orange)
                 .font(.title3)
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
                     .font(.callout.weight(.medium))
-                Text(isOK ? lang.s("home.ready") : lang.s("home.setup_needed"))
+                Text(isGranted ? lang.s("home.ready") : lang.s("home.setup_needed"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            if !isGranted {
+                Button(lang.s("settings.authorize")) {
+                    action()
+                }
+                .controlSize(.small)
             }
         }
         .frame(maxWidth: .infinity)

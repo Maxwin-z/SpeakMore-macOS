@@ -310,25 +310,41 @@ class ContextProfileService: ObservableObject {
         isProfileProcessing = true
         defer { isProfileProcessing = false }
 
-        log("Generating long-term profile...")
+        log("Generating long-term profile (incremental)...")
 
         let context = PersistenceController.shared.container.viewContext
+
+        // Build input: existing profile first (higher weight), then today's new data
+        var inputText = ""
+
+        // 1. Existing profile as foundation (higher weight)
+        if let current = activeProfile {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            if let currentJSON = try? encoder.encode(current),
+               let jsonStr = String(data: currentJSON, encoding: .utf8) {
+                inputText += "\(L("prompt.current_profile_label"))\n\(jsonStr)"
+            }
+        }
+
+        // 2. Today's snapshots as incremental input
+        let todayStart = Calendar.current.startOfDay(for: Date())
         let fetchRequest: NSFetchRequest<ContextSnapshot> = ContextSnapshot.fetchRequest()
-        let sevenDaysAgo = Date().addingTimeInterval(-7 * 86400)
-        fetchRequest.predicate = NSPredicate(format: "createdAt >= %@", sevenDaysAgo as NSDate)
+        fetchRequest.predicate = NSPredicate(format: "createdAt >= %@", todayStart as NSDate)
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \ContextSnapshot.createdAt, ascending: true)]
 
         do {
             let snapshots = try context.fetch(fetchRequest)
-            guard !snapshots.isEmpty else { return }
 
             let summaries = snapshots.compactMap { $0.rawJSON }
-            guard !summaries.isEmpty else { return }
+            if !summaries.isEmpty {
+                if !inputText.isEmpty { inputText += "\n\n" }
+                inputText += "\(L("prompt.today_snapshots"))\n" + summaries.joined(separator: "\n---\n")
+            }
 
-            var inputText = "\(L("prompt.recent_snapshots"))\n" + summaries.joined(separator: "\n---\n")
-
+            // 3. Today's user corrections
             let recordingFetch: NSFetchRequest<Recording> = Recording.fetchRequest()
-            recordingFetch.predicate = NSPredicate(format: "createdAt >= %@ AND userEditedText != nil", sevenDaysAgo as NSDate)
+            recordingFetch.predicate = NSPredicate(format: "createdAt >= %@ AND userEditedText != nil", todayStart as NSDate)
             recordingFetch.sortDescriptors = [NSSortDescriptor(keyPath: \Recording.createdAt, ascending: true)]
             if let editedRecordings = try? context.fetch(recordingFetch), !editedRecordings.isEmpty {
                 let correctionDiffs = buildCorrectionDiffs(from: editedRecordings)
@@ -337,14 +353,8 @@ class ContextProfileService: ObservableObject {
                 }
             }
 
-            if let current = activeProfile {
-                let encoder = JSONEncoder()
-                encoder.outputFormatting = .prettyPrinted
-                if let currentJSON = try? encoder.encode(current),
-                   let jsonStr = String(data: currentJSON, encoding: .utf8) {
-                    inputText += "\n\n\(L("prompt.current_profile_label"))\n\(jsonStr)"
-                }
-            }
+            // Need either existing profile or today's data to proceed
+            guard !inputText.isEmpty else { return }
 
             let prompt = profileGenerationPrompt()
             let config = MultimodalConfigStore.shared.config
