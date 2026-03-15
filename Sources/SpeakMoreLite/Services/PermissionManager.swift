@@ -1,16 +1,19 @@
 import Foundation
 import ApplicationServices
 import AppKit
+import CoreGraphics
 
 @MainActor
 class PermissionManager: ObservableObject {
     @Published var isAccessibilityGranted = false
+    @Published var isInputMonitoringGranted = false
     @Published var isFnKeyConfiguredCorrectly = false
 
     private var pollingTimer: Timer?
 
     func checkAllPermissions() {
         checkAccessibilityPermission()
+        checkInputMonitoringPermission()
         checkFnKeyConfiguration()
     }
 
@@ -20,10 +23,22 @@ class PermissionManager: ObservableObject {
         isAccessibilityGranted = trusted
     }
 
+    func checkInputMonitoringPermission() {
+        let granted = CGPreflightListenEventAccess()
+        NSLog("[PermissionManager] CGPreflightListenEventAccess() = \(granted)")
+        isInputMonitoringGranted = granted
+    }
+
     func requestAccessibilityPermission() {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
         startAccessibilityPolling()
+    }
+
+    func requestInputMonitoringPermission() {
+        let result = CGRequestListenEventAccess()
+        NSLog("[PermissionManager] CGRequestListenEventAccess() = \(result)")
+        isInputMonitoringGranted = result
     }
 
     func checkFnKeyConfiguration() {

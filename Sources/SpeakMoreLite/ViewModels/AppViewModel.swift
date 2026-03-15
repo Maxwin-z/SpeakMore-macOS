@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import ApplicationServices
 import Combine
 
 /// Application state machine
@@ -72,6 +73,9 @@ class AppViewModel: ObservableObject {
         NSLog("[AppViewModel] init() called")
         setupHotkeyCallbacks()
         permissionManager.checkAllPermissions()
+        if !permissionManager.isInputMonitoringGranted {
+            permissionManager.requestInputMonitoringPermission()
+        }
         hotkeyService.start()
         setupFloatingWidget()
     }

@@ -78,6 +78,15 @@ struct HomeScreen: View {
                         .frame(height: 32)
 
                     statusItem(
+                        icon: "cursorarrow.click.badge.clock",
+                        title: "输入监控",
+                        isOK: appViewModel.permissionManager.isInputMonitoringGranted
+                    )
+
+                    Divider()
+                        .frame(height: 32)
+
+                    statusItem(
                         icon: "network",
                         title: "API 配置",
                         isOK: MultimodalConfigStore.shared.isConfigured

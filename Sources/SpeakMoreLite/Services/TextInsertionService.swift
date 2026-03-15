@@ -45,13 +45,12 @@ class TextInsertionService {
             var role: AnyObject?
             AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)
 
-            var appRef: AnyObject?
-            AXUIElementCopyAttributeValue(AXUIElementCreateSystemWide(), kAXFocusedApplicationAttribute as CFString, &appRef)
-            var appTitle: AnyObject?
-            if let app = appRef {
-                let appElement = app as! AXUIElement
-                AXUIElementCopyAttributeValue(appElement, kAXTitleAttribute as CFString, &appTitle)
+            // Get app info via NSWorkspace (reliable on macOS 26+)
+            if let frontApp = NSWorkspace.shared.frontmostApplication {
+                savedAppName = frontApp.localizedName ?? "unknown"
+                savedAppBundleId = frontApp.bundleIdentifier
 
+                let appElement = AXUIElementCreateApplication(frontApp.processIdentifier)
                 var focusedWindow: AnyObject?
                 if AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &focusedWindow) == .success {
                     var winTitle: AnyObject?
@@ -63,12 +62,8 @@ class TextInsertionService {
                     savedDocumentPath = docPath as? String
                 }
             }
-            savedAppName = (appTitle as? String) ?? "unknown"
-            savedIsTextInput = isTextInputElement(element)
 
-            if let frontApp = NSWorkspace.shared.frontmostApplication {
-                savedAppBundleId = frontApp.bundleIdentifier
-            }
+            savedIsTextInput = isTextInputElement(element)
 
             debugLog("Captured focus: app=\"\(savedAppName ?? "?")\", bundleId=\"\(savedAppBundleId ?? "?")\", window=\"\(savedWindowTitle ?? "?")\", isTextInput=\(savedIsTextInput)")
         } else {
@@ -310,17 +305,31 @@ class TextInsertionService {
     // MARK: - Focus Detection
 
     private func getFocusedElement() -> AXUIElement? {
+        // Try system-wide kAXFocusedApplicationAttribute first
         let systemWide = AXUIElementCreateSystemWide()
-
         var focusedApp: AnyObject?
         let appResult = AXUIElementCopyAttributeValue(
             systemWide,
             kAXFocusedApplicationAttribute as CFString,
             &focusedApp
         )
-        guard appResult == .success else { return nil }
 
-        let appElement = focusedApp as! AXUIElement
+        let appElement: AXUIElement
+        if appResult == .success {
+            appElement = focusedApp as! AXUIElement
+        } else {
+            // Fallback: use NSWorkspace to get frontmost app PID, then create AXUIElement
+            debugLog("getFocusedElement: kAXFocusedApplicationAttribute failed (\(appResult.rawValue)), falling back to NSWorkspace")
+            guard let frontApp = NSWorkspace.shared.frontmostApplication else {
+                debugLog("getFocusedElement: NSWorkspace.frontmostApplication is nil")
+                return nil
+            }
+            debugLog("getFocusedElement: frontmost app via NSWorkspace: \(frontApp.localizedName ?? "?") (pid=\(frontApp.processIdentifier))")
+            appElement = AXUIElementCreateApplication(frontApp.processIdentifier)
+        }
+
+        let appTitle = axString(appElement, kAXTitleAttribute) ?? "unknown"
+        debugLog("getFocusedElement: focused app=\"\(appTitle)\"")
 
         AXUIElementSetAttributeValue(
             appElement,
@@ -334,17 +343,23 @@ class TextInsertionService {
             kAXFocusedUIElementAttribute as CFString,
             &focusedElement
         )
-        guard elemResult == .success else { return nil }
+        guard elemResult == .success else {
+            debugLog("getFocusedElement: kAXFocusedUIElementAttribute failed, error=\(elemResult.rawValue)")
+            return nil
+        }
 
         var element = focusedElement as! AXUIElement
-
         let role = axString(element, kAXRoleAttribute) ?? ""
+        let subrole = axString(element, kAXSubroleAttribute) ?? ""
+        debugLog("getFocusedElement: element role=\(role), subrole=\(subrole)")
+
         if role == "AXWebArea" {
             var webFocused: AnyObject?
             AXUIElementCopyAttributeValue(element, kAXFocusedUIElementAttribute as CFString, &webFocused)
             if let inner = webFocused as! AXUIElement? {
                 let innerRole = axString(inner, kAXRoleAttribute) ?? ""
                 if !innerRole.isEmpty && innerRole != "AXWebArea" {
+                    debugLog("getFocusedElement: drilled into AXWebArea → role=\(innerRole)")
                     element = inner
                 }
             }
