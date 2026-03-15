@@ -104,8 +104,10 @@ class ContextProfileService: ObservableObject {
 
         sections.append(baseInstruction)
 
+        var contextSections: [String] = []
+
         if !glossaryTerms.isEmpty {
-            sections.append("【术语表（最高优先级）】\n以下术语在转写时必须使用，不可替换为其他写法：\n\(glossaryTerms.joined(separator: "、"))")
+            contextSections.append("【术语表（最高优先级）】\n以下术语在转写时优先使用：\n\(glossaryTerms.joined(separator: "、"))")
         }
 
         if contextLevel.rawValue >= ContextLevel.longTerm.rawValue, let profile = activeProfile {
@@ -119,7 +121,7 @@ class ContextProfileService: ObservableObject {
                 profileParts.append("常用实体: \(entities.joined(separator: "、"))")
             }
             if !profileParts.isEmpty {
-                sections.append("【用户画像】\n\(profileParts.joined(separator: "\n"))")
+                contextSections.append("【用户画像】\n\(profileParts.joined(separator: "\n"))")
             }
         }
 
@@ -135,12 +137,17 @@ class ContextProfileService: ObservableObject {
                 snapParts.append("实体词云: \(entities.joined(separator: "、"))")
             }
             if !snapParts.isEmpty {
-                sections.append("【近期上下文】\n\(snapParts.joined(separator: "\n"))")
+                contextSections.append("【近期上下文】\n\(snapParts.joined(separator: "\n"))")
             }
         }
 
         if contextLevel.rawValue >= ContextLevel.realtime.rawValue, let app = sourceApp, !app.isEmpty {
-            sections.append("【当前环境】\n应用: \(app)")
+            contextSections.append("【当前环境】\n应用: \(app)")
+        }
+
+        if !contextSections.isEmpty {
+            sections.append("以下为优先级从高到低的上下文环境，供转写过程参考：")
+            sections.append(contentsOf: contextSections)
         }
 
         return sections.joined(separator: "\n\n")
@@ -170,9 +177,12 @@ class ContextProfileService: ObservableObject {
         // Base instruction (user-configured) — always included
         sections.append(baseInstruction)
 
+        // Build context sections by priority (high → low)
+        var contextSections: [String] = []
+
         // Glossary terms (highest priority) — always included
         if !glossaryTerms.isEmpty {
-            sections.append("【术语表（最高优先级）】\n以下术语在转写时必须使用，不可替换为其他写法：\n\(glossaryTerms.joined(separator: "、"))")
+            contextSections.append("【术语表（最高优先级）】\n以下术语在转写时优先使用：\n\(glossaryTerms.joined(separator: "、"))")
         }
 
         // Long-term profile — only for longTerm level (≥45s)
@@ -187,7 +197,7 @@ class ContextProfileService: ObservableObject {
                 profileParts.append("常用实体: \(entities.joined(separator: "、"))")
             }
             if !profileParts.isEmpty {
-                sections.append("【用户画像】\n\(profileParts.joined(separator: "\n"))")
+                contextSections.append("【用户画像】\n\(profileParts.joined(separator: "\n"))")
             }
         }
 
@@ -204,7 +214,7 @@ class ContextProfileService: ObservableObject {
                 snapParts.append("实体词云: \(entities.joined(separator: "、"))")
             }
             if !snapParts.isEmpty {
-                sections.append("【近期上下文】\n\(snapParts.joined(separator: "\n"))")
+                contextSections.append("【近期上下文】\n\(snapParts.joined(separator: "\n"))")
             }
         }
 
@@ -212,13 +222,18 @@ class ContextProfileService: ObservableObject {
         if level.rawValue >= ContextLevel.realtime.rawValue {
             let envSummary = realtimeContext.summary
             if envSummary != "无" {
-                sections.append("【当前环境】\n\(envSummary)")
+                contextSections.append("【当前环境】\n\(envSummary)")
             }
         }
 
         // App-specific prompt override — always included
         if let appPrompt = appPrompt, !appPrompt.isEmpty {
-            sections.append("【应用专属指令】\n\(appPrompt)")
+            contextSections.append("【应用专属指令】\n\(appPrompt)")
+        }
+
+        if !contextSections.isEmpty {
+            sections.append("以下为优先级从高到低的上下文环境，供转写过程参考：")
+            sections.append(contentsOf: contextSections)
         }
 
         return sections.joined(separator: "\n\n")
