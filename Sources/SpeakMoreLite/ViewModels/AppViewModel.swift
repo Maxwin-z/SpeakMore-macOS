@@ -203,7 +203,6 @@ class AppViewModel: ObservableObject {
         recordingOverlay.showTranscribing()
 
         DebugLogger.shared.log("[App] Using multimodal transcription for \(samples.count) samples...")
-        recordingOverlay.showChatStreaming()
         Task {
             await streamMultimodalResponse(samples: samples)
         }
@@ -263,11 +262,18 @@ class AppViewModel: ObservableObject {
 
         var fullResponse = ""
         var streamFailed = false
+        var isFirstChunk = true
 
         do {
             let multimodalConfig = MultimodalConfigStore.shared.config
             for try await chunk in multimodalService.stream(audioSamples: samples, systemPrompt: systemPrompt, config: multimodalConfig) {
+                if isFirstChunk {
+                    recordingOverlay.onStreamingStarted()
+                    isFirstChunk = false
+                }
+
                 fullResponse += chunk
+                recordingOverlay.bumpStreamingProgress()
 
                 if usePanel {
                     textEditorPanel.appendStreamingText(chunk)

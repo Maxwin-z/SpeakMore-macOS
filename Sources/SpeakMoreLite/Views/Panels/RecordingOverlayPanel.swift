@@ -116,13 +116,23 @@ class RecordingOverlayPanel: NSPanel {
         overlayState.mode = .transcribing
         overlayState.transcriptionProgress = 0
         audioLevelProvider.level = 0
-        startProgressTimer(cap: 0.8)
+        startProgressTimer(cap: 0.6, speed: 0.015)
     }
 
-    func showChatStreaming() {
+    func onStreamingStarted() {
         stopProgressTimer()
-        overlayState.transcriptionProgress = 0.8
-        startProgressTimer(cap: 0.95)
+        if overlayState.transcriptionProgress < 0.6 {
+            overlayState.transcriptionProgress = 0.6
+        }
+        startProgressTimer(cap: 0.95, speed: 0.04)
+    }
+
+    func bumpStreamingProgress() {
+        let current = overlayState.transcriptionProgress
+        let cap = 0.95
+        if current < cap {
+            overlayState.transcriptionProgress = current + (cap - current) * 0.06
+        }
     }
 
     func finishProgress() {
@@ -193,14 +203,14 @@ class RecordingOverlayPanel: NSPanel {
         })
     }
 
-    private func startProgressTimer(cap: Double) {
+    private func startProgressTimer(cap: Double, speed: Double) {
         progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 guard let self = self else { return }
                 let current = self.overlayState.transcriptionProgress
                 if current < cap {
                     let remaining = cap - current
-                    self.overlayState.transcriptionProgress = current + remaining * 0.06
+                    self.overlayState.transcriptionProgress = current + remaining * speed
                 }
             }
         }
