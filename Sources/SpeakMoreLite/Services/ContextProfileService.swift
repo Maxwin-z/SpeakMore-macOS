@@ -95,13 +95,14 @@ class ContextProfileService: ObservableObject {
 
     /// Build system prompt with a specific context level for re-recognition.
     func buildSystemPrompt(
+        baseInstruction: String,
         contextLevel: ContextLevel,
         sourceApp: String?,
         glossaryTerms: [String] = []
     ) -> String {
         var sections: [String] = []
 
-        sections.append("你是一个语音转写助手。请将用户的语音内容准确转写为文字，保持原意，修正明显的口语错误和语气词，输出自然流畅的书面文本。直接输出转写结果，不要添加任何解释。")
+        sections.append(baseInstruction)
 
         if !glossaryTerms.isEmpty {
             sections.append("【术语表（最高优先级）】\n以下术语在转写时必须使用，不可替换为其他写法：\n\(glossaryTerms.joined(separator: "、"))")
@@ -145,24 +146,37 @@ class ContextProfileService: ObservableObject {
         return sections.joined(separator: "\n\n")
     }
 
-    /// Build the enhanced system prompt combining all context layers.
+    /// Determine context level automatically based on recording duration.
+    static func contextLevel(forDuration duration: TimeInterval) -> ContextLevel {
+        if duration >= 45 {
+            return .longTerm   // base + realtime + short-term + long-term
+        } else if duration >= 15 {
+            return .shortTerm  // base + realtime + short-term
+        } else {
+            return .realtime   // base + realtime only
+        }
+    }
+
+    /// Build the enhanced system prompt combining context layers based on level.
     func buildEnhancedSystemPrompt(
-        userPrompt: String?,
+        baseInstruction: String,
+        appPrompt: String?,
         realtimeContext: RealtimeContext,
-        glossaryTerms: [String] = []
+        glossaryTerms: [String] = [],
+        contextLevel level: ContextLevel = .longTerm
     ) -> String {
         var sections: [String] = []
 
-        // Base transcription instruction
-        sections.append("你是一个语音转写助手。请将用户的语音内容准确转写为文字，保持原意，修正明显的口语错误和语气词，输出自然流畅的书面文本。直接输出转写结果，不要添加任何解释。")
+        // Base instruction (user-configured) — always included
+        sections.append(baseInstruction)
 
-        // Glossary terms (highest priority)
+        // Glossary terms (highest priority) — always included
         if !glossaryTerms.isEmpty {
             sections.append("【术语表（最高优先级）】\n以下术语在转写时必须使用，不可替换为其他写法：\n\(glossaryTerms.joined(separator: "、"))")
         }
 
-        // Long-term profile
-        if let profile = activeProfile {
+        // Long-term profile — only for longTerm level (≥45s)
+        if level.rawValue >= ContextLevel.longTerm.rawValue, let profile = activeProfile {
             var profileParts: [String] = []
             if let id = profile.identity { profileParts.append("用户身份: \(id)") }
             if let domains = profile.primaryDomains, !domains.isEmpty {
@@ -177,8 +191,8 @@ class ContextProfileService: ObservableObject {
             }
         }
 
-        // Short-term snapshot
-        if let snapshot = latestSnapshot {
+        // Short-term snapshot — for shortTerm+ level (≥15s)
+        if level.rawValue >= ContextLevel.shortTerm.rawValue, let snapshot = latestSnapshot {
             var snapParts: [String] = []
             if let topic = snapshot.topic { snapParts.append("当前话题: \(topic)") }
             if let intent = snapshot.currentIntent { snapParts.append("当前意图: \(intent)") }
@@ -194,15 +208,17 @@ class ContextProfileService: ObservableObject {
             }
         }
 
-        // Real-time environment
-        let envSummary = realtimeContext.summary
-        if envSummary != "无" {
-            sections.append("【当前环境】\n\(envSummary)")
+        // Real-time environment — for realtime+ level (always, since minimum is realtime)
+        if level.rawValue >= ContextLevel.realtime.rawValue {
+            let envSummary = realtimeContext.summary
+            if envSummary != "无" {
+                sections.append("【当前环境】\n\(envSummary)")
+            }
         }
 
-        // User's custom prompt
-        if let userPrompt = userPrompt, !userPrompt.isEmpty {
-            sections.append("【用户指令】\n\(userPrompt)")
+        // App-specific prompt override — always included
+        if let appPrompt = appPrompt, !appPrompt.isEmpty {
+            sections.append("【应用专属指令】\n\(appPrompt)")
         }
 
         return sections.joined(separator: "\n\n")

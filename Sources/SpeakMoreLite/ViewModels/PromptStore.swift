@@ -41,15 +41,19 @@ class PromptStore: ObservableObject {
         config.glossaryTerms.removeAll { $0 == term }
     }
 
-    func resolvePrompt(forApp bundleId: String?) -> String? {
+    /// Returns app-specific prompt if matched, otherwise nil.
+    /// The base instruction is used separately as the system prompt foundation.
+    func resolveAppPrompt(forApp bundleId: String?) -> String? {
         if let bundleId = bundleId,
            let appPrompt = config.appPrompts.first(where: { $0.appBundleId == bundleId }),
            !appPrompt.prompt.isEmpty {
             return appPrompt.prompt
         }
-        if !config.generalPrompt.isEmpty {
-            return config.generalPrompt
-        }
         return nil
+    }
+
+    func applyTemplate(_ template: BaseInstructionTemplate) {
+        config.baseInstructionTemplate = template
+        config.baseInstruction = template.prompt
     }
 }

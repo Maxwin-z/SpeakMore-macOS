@@ -120,19 +120,36 @@ private struct HistoryDetailView: View {
                     audioPlayerSection
                 }
 
-                // Model info
-                if let model = recording.sttModelName {
+                // Model & context level info
+                HStack(spacing: 8) {
+                    if let model = recording.sttModelName {
+                        HStack(spacing: 4) {
+                            Image(systemName: "cpu")
+                                .font(.caption2)
+                            Text(model)
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    }
+
+                    let level = ContextLevel(rawValue: Int(recording.contextLevelUsed)) ?? .none
                     HStack(spacing: 4) {
-                        Image(systemName: "cpu")
+                        Image(systemName: "brain")
                             .font(.caption2)
-                        Text(model)
+                        Text(level.displayName)
                             .font(.caption)
                     }
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .background(contextLevelColor(level), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
+
+                // Context layers debug section
+                contextLayersSection
 
                 Divider()
 
@@ -443,6 +460,86 @@ private struct HistoryDetailView: View {
                 Label("删除", systemImage: "trash")
             }
             .buttonStyle(.bordered)
+        }
+    }
+
+    // MARK: - Context Layers Debug
+
+    @State private var isSystemPromptExpanded = false
+
+    private var contextLayersSection: some View {
+        let level = ContextLevel(rawValue: Int(recording.contextLevelUsed)) ?? .none
+
+        return GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                // Context level breakdown
+                HStack(spacing: 0) {
+                    ForEach(ContextLevel.allCases) { l in
+                        if l != .none {
+                            contextLayerChip(l, active: level.rawValue >= l.rawValue)
+                            if l != .longTerm { Spacer() }
+                        }
+                    }
+                }
+
+                // Duration → level explanation
+                let durationStr = String(format: "%.1f", recording.durationSeconds)
+                let rule: String = {
+                    if recording.durationSeconds >= 45 {
+                        return "\(durationStr)s ≥ 45s → 全部上下文"
+                    } else if recording.durationSeconds >= 15 {
+                        return "\(durationStr)s ≥ 15s → 基础 + 近期上下文"
+                    } else {
+                        return "\(durationStr)s < 15s → 仅基础上下文"
+                    }
+                }()
+                Text(rule)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                // System prompt (collapsible)
+                if let prompt = recording.systemPromptUsed, !prompt.isEmpty {
+                    Divider()
+
+                    DisclosureGroup("System Prompt", isExpanded: $isSystemPromptExpanded) {
+                        Text(prompt)
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(8)
+                            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 6))
+                    }
+                    .font(.caption.weight(.medium))
+                }
+            }
+            .padding(4)
+        } label: {
+            Label("上下文层级", systemImage: "square.3.layers.3d")
+        }
+    }
+
+    private func contextLayerChip(_ level: ContextLevel, active: Bool) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: active ? "checkmark.circle.fill" : "circle")
+                .font(.caption2)
+            Text(level.displayName)
+                .font(.caption)
+        }
+        .foregroundStyle(active ? .primary : .tertiary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            active ? contextLevelColor(level).opacity(0.15) : Color.clear,
+            in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+        )
+    }
+
+    private func contextLevelColor(_ level: ContextLevel) -> Color {
+        switch level {
+        case .none: return .gray
+        case .realtime: return .blue
+        case .shortTerm: return .orange
+        case .longTerm: return .purple
         }
     }
 

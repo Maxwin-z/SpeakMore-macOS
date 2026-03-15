@@ -42,7 +42,9 @@ class HistoryStore: ObservableObject {
         audioSamples: [Float]?,
         sourceApp: String?,
         sttModelName: String? = nil,
-        llmModelName: String? = nil
+        llmModelName: String? = nil,
+        contextLevel: ContextLevel? = nil,
+        systemPrompt: String? = nil
     ) {
         let recording = Recording(context: context)
         recording.id = UUID()
@@ -53,6 +55,10 @@ class HistoryStore: ObservableObject {
         recording.sourceApp = sourceApp
         recording.sttModelName = sttModelName
         recording.llmModelName = llmModelName
+        if let level = contextLevel {
+            recording.contextLevelUsed = Int16(level.rawValue)
+        }
+        recording.systemPromptUsed = systemPrompt
 
         let displayText = enhancedText ?? originalText
         recording.title = String(displayText.prefix(50))
@@ -185,8 +191,10 @@ class HistoryStore: ObservableObject {
         let config = model.buildConfig(from: baseConfig)
 
         // Build system prompt with context level
+        let baseInstruction = PromptStore.shared.config.baseInstruction
         let glossaryTerms = PromptStore.shared.config.glossaryTerms
         let systemPrompt = ContextProfileService.shared.buildSystemPrompt(
+            baseInstruction: baseInstruction,
             contextLevel: contextLevel,
             sourceApp: recording.sourceApp,
             glossaryTerms: glossaryTerms

@@ -8,6 +8,8 @@ struct PromptsScreen: View {
     @State private var newAppName = ""
     @State private var newAppBundleId = ""
     @State private var newAppPrompt = ""
+    @State private var editingBaseInstruction = ""
+    @State private var selectedTemplate: BaseInstructionTemplate? = nil
 
     var body: some View {
         ScrollView {
@@ -27,13 +29,17 @@ struct PromptsScreen: View {
                 // MARK: - Glossary
                 glossarySection
 
-                // MARK: - General Prompt
-                generalPromptSection
+                // MARK: - Base Instruction
+                baseInstructionSection
 
                 // MARK: - App-specific Prompts
                 appPromptsSection
             }
             .padding(24)
+        }
+        .onAppear {
+            editingBaseInstruction = promptStore.config.baseInstruction
+            selectedTemplate = promptStore.config.baseInstructionTemplate
         }
     }
 
@@ -80,16 +86,52 @@ struct PromptsScreen: View {
         }
     }
 
-    // MARK: - General Prompt Section
+    // MARK: - Base Instruction Section
 
-    private var generalPromptSection: some View {
+    private var baseInstructionHasChanges: Bool {
+        editingBaseInstruction != promptStore.config.baseInstruction
+    }
+
+    private var baseInstructionSection: some View {
         GroupBox {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("对所有应用生效的转写偏好指令。")
+            VStack(alignment: .leading, spacing: 12) {
+                Text("作为转写的基础指令发送给大模型，对所有应用生效。选择预设模板或自定义编辑。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                TextEditor(text: $promptStore.config.generalPrompt)
+                // Template picker
+                HStack(spacing: 6) {
+                    ForEach(BaseInstructionTemplate.allCases) { template in
+                        Button {
+                            selectedTemplate = template
+                            editingBaseInstruction = template.prompt
+                        } label: {
+                            VStack(spacing: 4) {
+                                Text(template.displayName)
+                                    .font(.callout.weight(.medium))
+                                Text(template.description)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2, reservesSpace: true)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(selectedTemplate == template ? Color.accentColor.opacity(0.12) : .clear)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(selectedTemplate == template ? Color.accentColor.opacity(1) : Color.gray.opacity(0.2), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                TextEditor(text: $editingBaseInstruction)
                     .font(.body)
                     .scrollContentBackground(.hidden)
                     .padding(8)
@@ -102,9 +144,54 @@ struct PromptsScreen: View {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .stroke(.quaternary, lineWidth: 1)
                     )
+                    .onChange(of: editingBaseInstruction) { newValue in
+                        // If user edits text to no longer match any template, clear selection
+                        if let current = selectedTemplate, newValue != current.prompt {
+                            selectedTemplate = nil
+                        }
+                        // If user edits text to match a template, select it
+                        if selectedTemplate == nil {
+                            for t in BaseInstructionTemplate.allCases where newValue == t.prompt {
+                                selectedTemplate = t
+                                break
+                            }
+                        }
+                    }
+
+                HStack(spacing: 8) {
+                    if selectedTemplate == nil {
+                        Text("自定义")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(.orange.opacity(0.12))
+                            )
+                    }
+
+                    Spacer()
+
+                    Button("还原") {
+                        editingBaseInstruction = promptStore.config.baseInstruction
+                        selectedTemplate = promptStore.config.baseInstructionTemplate
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(!baseInstructionHasChanges)
+
+                    Button("保存") {
+                        promptStore.config.baseInstruction = editingBaseInstruction
+                        promptStore.config.baseInstructionTemplate = selectedTemplate
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(!baseInstructionHasChanges)
+                }
             }
         } label: {
-            Label("通用提示词", systemImage: "text.alignleft")
+            Label("基础指令", systemImage: "text.alignleft")
         }
     }
 
@@ -113,7 +200,7 @@ struct PromptsScreen: View {
     private var appPromptsSection: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 12) {
-                Text("为特定应用设置专属的转写指令，优先级高于通用提示词。")
+                Text("为特定应用设置专属的转写指令，作为基础指令的补充。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 

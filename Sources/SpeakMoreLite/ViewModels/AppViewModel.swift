@@ -69,6 +69,10 @@ class AppViewModel: ObservableObject {
     private var lastRecordingSamples: [Float]?
     private var lastRecordingDuration: TimeInterval = 0
 
+    // Buffered insertion: accumulate SSE chunks and flush in batches
+    private var insertionBuffer = ""
+    private var isFlushingBuffer = false
+
     init() {
         NSLog("[AppViewModel] init() called")
         setupHotkeyCallbacks()
@@ -212,6 +216,18 @@ class AppViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Buffered Insertion
+
+    private func flushInsertionBuffer() async {
+        guard !insertionBuffer.isEmpty, !isFlushingBuffer else { return }
+        isFlushingBuffer = true
+        let text = insertionBuffer
+        insertionBuffer = ""
+        let result = await textInsertionService.insertText(text)
+        DebugLogger.shared.log("[App] Buffered insertion (\(text.count) chars): \(result)")
+        isFlushingBuffer = false
+    }
+
     // MARK: - Multimodal Transcription
 
     private func streamMultimodalResponse(samples: [Float]) async {
@@ -248,12 +264,17 @@ class AppViewModel: ObservableObject {
             documentPath: textInsertionService.capturedDocumentPath
         )
 
-        let userPrompt = PromptStore.shared.resolvePrompt(forApp: sourceApp)
+        let baseInstruction = PromptStore.shared.config.baseInstruction
+        let appPrompt = PromptStore.shared.resolveAppPrompt(forApp: sourceApp)
         let glossaryTerms = PromptStore.shared.config.glossaryTerms
+        let contextLevel = ContextProfileService.contextLevel(forDuration: lastRecordingDuration)
+        DebugLogger.shared.log("[App] Recording duration: \(String(format: "%.1f", lastRecordingDuration))s → context level: \(contextLevel.displayName)")
         let systemPrompt = contextProfileService.buildEnhancedSystemPrompt(
-            userPrompt: userPrompt,
+            baseInstruction: baseInstruction,
+            appPrompt: appPrompt,
             realtimeContext: realtimeContext,
-            glossaryTerms: glossaryTerms
+            glossaryTerms: glossaryTerms,
+            contextLevel: contextLevel
         )
 
         DebugLogger.shared.log("[App] === 多模态完整提示词 ===")
@@ -267,6 +288,19 @@ class AppViewModel: ObservableObject {
         var fullResponse = ""
         var streamFailed = false
         var isFirstChunk = true
+
+        // Reset insertion buffer
+        insertionBuffer = ""
+        isFlushingBuffer = false
+
+        // Start a concurrent flush task for buffered insertion (non-panel mode only)
+        let flushTask: Task<Void, Never>? = usePanel ? nil : Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 30_000_000) // 30ms flush interval
+                await self.flushInsertionBuffer()
+            }
+        }
 
         do {
             let multimodalConfig = MultimodalConfigStore.shared.config
@@ -282,14 +316,24 @@ class AppViewModel: ObservableObject {
                 if usePanel {
                     textEditorPanel.appendStreamingText(chunk)
                 } else {
-                    let result = await textInsertionService.insertText(chunk)
-                    DebugLogger.shared.log("[App] Chunk insertion: \(result)")
+                    // Buffer the chunk instead of inserting immediately
+                    insertionBuffer += chunk
                 }
             }
             DebugLogger.shared.log("[App] Multimodal stream completed, total: \"\(fullResponse.prefix(100))\"")
         } catch {
             DebugLogger.shared.log("[App] Multimodal API error: \(error)")
             streamFailed = true
+        }
+
+        // Stop flush task and drain remaining buffer
+        flushTask?.cancel()
+        if !insertionBuffer.isEmpty {
+            let remaining = insertionBuffer
+            insertionBuffer = ""
+            isFlushingBuffer = false
+            let result = await textInsertionService.insertText(remaining)
+            DebugLogger.shared.log("[App] Final buffer flush (\(remaining.count) chars): \(result)")
         }
 
         currentFullResponse = fullResponse
@@ -316,7 +360,9 @@ class AppViewModel: ObservableObject {
             audioSamples: lastRecordingSamples,
             sourceApp: capturedApp,
             sttModelName: "multimodal:\(multimodalModelId)",
-            llmModelName: nil
+            llmModelName: nil,
+            contextLevel: contextLevel,
+            systemPrompt: systemPrompt
         )
         lastSavedRecordingId = HistoryStore.shared.recordings.first?.id
         lastRecordingSamples = nil

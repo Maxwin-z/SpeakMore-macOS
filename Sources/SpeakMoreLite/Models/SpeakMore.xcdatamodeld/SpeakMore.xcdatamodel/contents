@@ -12,6 +12,7 @@
     </entity>
     <entity name="Recording" representedClassName="Recording" syncable="YES" codeGenerationType="class">
         <attribute name="audioFilePath" optional="YES" attributeType="String"/>
+        <attribute name="contextLevelUsed" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="durationSeconds" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="enhancedText" optional="YES" attributeType="String"/>
@@ -20,6 +21,7 @@
         <attribute name="originalText" attributeType="String"/>
         <attribute name="sourceApp" optional="YES" attributeType="String"/>
         <attribute name="sttModelName" optional="YES" attributeType="String"/>
+        <attribute name="systemPromptUsed" optional="YES" attributeType="String"/>
         <attribute name="title" optional="YES" attributeType="String"/>
         <attribute name="userEditedText" optional="YES" attributeType="String"/>
         <relationship name="transcriptionResults" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="TranscriptionResult" inverseName="recording" inverseEntity="TranscriptionResult"/>
