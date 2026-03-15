@@ -67,7 +67,7 @@ A lightweight macOS menu bar app that converts speech to text using cloud-based 
 
 ## License
 
-All rights reserved.
+[MIT License](LICENSE)
 
 ---
 
@@ -138,4 +138,4 @@ All rights reserved.
 
 ## 许可
 
-保留所有权利。
+[MIT 协议](LICENSE)
