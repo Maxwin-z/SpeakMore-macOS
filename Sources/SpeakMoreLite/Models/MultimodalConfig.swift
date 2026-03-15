@@ -77,35 +77,62 @@ struct MultimodalModel: Identifiable, Codable, Hashable {
 /// Persisted multimodal API configuration
 struct MultimodalConfig: Codable {
     var provider: MultimodalProvider
-    var apiKey: String
+    var apiKeys: [String: String]
     var endpoint: String
     var selectedModelId: String
     var customModelId: String
 
+    /// Current provider's API key (read/write through apiKeys dictionary)
+    var apiKey: String {
+        get { apiKeys[provider.rawValue] ?? "" }
+        set { apiKeys[provider.rawValue] = newValue }
+    }
+
     static let `default` = MultimodalConfig(
         provider: .gemini,
-        apiKey: "",
+        apiKeys: [:],
         endpoint: MultimodalProvider.gemini.defaultEndpoint,
         selectedModelId: "gemini-2.5-flash",
         customModelId: ""
     )
 
-    init(provider: MultimodalProvider, apiKey: String,
+    init(provider: MultimodalProvider, apiKeys: [String: String],
          endpoint: String, selectedModelId: String, customModelId: String = "") {
         self.provider = provider
-        self.apiKey = apiKey
+        self.apiKeys = apiKeys
         self.endpoint = endpoint
         self.selectedModelId = selectedModelId
         self.customModelId = customModelId
     }
 
+    private enum CodingKeys: String, CodingKey {
+        case provider, apiKeys, endpoint, selectedModelId, customModelId
+        case apiKey // legacy single-key field
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         provider = try container.decodeIfPresent(MultimodalProvider.self, forKey: .provider) ?? .gemini
-        apiKey = try container.decodeIfPresent(String.self, forKey: .apiKey) ?? ""
+        // Migrate from legacy single apiKey to per-provider apiKeys
+        if let keys = try container.decodeIfPresent([String: String].self, forKey: .apiKeys) {
+            apiKeys = keys
+        } else if let legacyKey = try container.decodeIfPresent(String.self, forKey: .apiKey), !legacyKey.isEmpty {
+            apiKeys = [provider.rawValue: legacyKey]
+        } else {
+            apiKeys = [:]
+        }
         endpoint = try container.decodeIfPresent(String.self, forKey: .endpoint) ?? provider.defaultEndpoint
         selectedModelId = try container.decodeIfPresent(String.self, forKey: .selectedModelId) ?? "gemini-2.5-flash"
         customModelId = try container.decodeIfPresent(String.self, forKey: .customModelId) ?? ""
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(provider, forKey: .provider)
+        try container.encode(apiKeys, forKey: .apiKeys)
+        try container.encode(endpoint, forKey: .endpoint)
+        try container.encode(selectedModelId, forKey: .selectedModelId)
+        try container.encode(customModelId, forKey: .customModelId)
     }
 
     /// The effective model ID to use

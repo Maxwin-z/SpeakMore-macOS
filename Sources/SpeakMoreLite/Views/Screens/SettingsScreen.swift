@@ -115,6 +115,7 @@ struct SettingsScreen: View {
                         multimodalStore.config.selectedModelId = first.id
                     }
                     multimodalStore.config.customModelId = ""
+                    apiKeyVisible = false
                 }
 
                 Divider()
@@ -128,11 +129,21 @@ struct SettingsScreen: View {
                         Group {
                             if apiKeyVisible {
                                 TextField("输入 API Key…", text: $multimodalStore.config.apiKey)
+                                    .textFieldStyle(.roundedBorder)
+                            } else if multimodalStore.config.apiKey.isEmpty {
+                                TextField("输入 API Key…", text: $multimodalStore.config.apiKey)
+                                    .textFieldStyle(.roundedBorder)
                             } else {
-                                SecureField("输入 API Key…", text: $multimodalStore.config.apiKey)
+                                Text(maskedApiKey(multimodalStore.config.apiKey))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 5)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                            .stroke(Color.primary.opacity(0.15), lineWidth: 0.5)
+                                    )
                             }
                         }
-                        .textFieldStyle(.roundedBorder)
                         .font(.system(.body, design: .monospaced))
 
                         Button {
@@ -186,6 +197,13 @@ struct SettingsScreen: View {
         } label: {
             Label("多模态 API", systemImage: "waveform.badge.magnifyingglass")
         }
+    }
+
+    // MARK: - Helpers
+
+    private func maskedApiKey(_ key: String) -> String {
+        if key.count <= 6 { return key }
+        return String(key.prefix(6)) + String(repeating: "•", count: min(key.count - 6, 20))
     }
 
     // MARK: - Model Selection
