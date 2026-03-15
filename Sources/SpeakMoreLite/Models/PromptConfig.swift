@@ -80,6 +80,12 @@ struct PromptConfiguration: Codable, Equatable {
             baseInstruction = BaseInstructionTemplate.faithful.prompt
             baseInstructionTemplate = .faithful
         }
+
+        // Migration: sync baseInstruction with current template text.
+        // This picks up localization changes (e.g., role/constraints moved to system prompt).
+        if let template = baseInstructionTemplate {
+            baseInstruction = template.prompt
+        }
     }
 }
 

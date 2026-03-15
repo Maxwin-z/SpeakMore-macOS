@@ -119,6 +119,7 @@ struct PromptsScreen: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 6)
+                            .contentShape(Rectangle())
                             .background(
                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                                     .fill(selectedTemplate == template ? Color.accentColor.opacity(0.12) : .clear)
@@ -145,14 +146,14 @@ struct PromptsScreen: View {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .stroke(.quaternary, lineWidth: 1)
                     )
-                    .onChange(of: editingBaseInstruction) { newValue in
+                    .onChange(of: editingBaseInstruction) {
                         // If user edits text to no longer match any template, clear selection
-                        if let current = selectedTemplate, newValue != current.prompt {
+                        if let current = selectedTemplate, editingBaseInstruction != current.prompt {
                             selectedTemplate = nil
                         }
                         // If user edits text to match a template, select it
                         if selectedTemplate == nil {
-                            for t in BaseInstructionTemplate.allCases where newValue == t.prompt {
+                            for t in BaseInstructionTemplate.allCases where editingBaseInstruction == t.prompt {
                                 selectedTemplate = t
                                 break
                             }

@@ -221,10 +221,29 @@ class AppViewModel: ObservableObject {
     private func flushInsertionBuffer() async {
         guard !insertionBuffer.isEmpty, !isFlushingBuffer else { return }
         isFlushingBuffer = true
-        let text = insertionBuffer
-        insertionBuffer = ""
-        let result = await textInsertionService.insertText(text)
-        DebugLogger.shared.log("[App] Buffered insertion (\(text.count) chars): \(result)")
+
+        var text = insertionBuffer
+        var remaining = ""
+
+        // Hold back potential partial closing </transcription> tag
+        let closeTag = "</transcription>"
+        if text.contains(closeTag) {
+            text = text.replacingOccurrences(of: closeTag, with: "")
+        } else if let ltIdx = text.lastIndex(of: "<") {
+            let suffix = String(text[ltIdx...])
+            if closeTag.hasPrefix(suffix) {
+                remaining = suffix
+                text = String(text[..<ltIdx])
+            }
+        }
+
+        insertionBuffer = remaining
+
+        if !text.isEmpty {
+            let result = await textInsertionService.insertText(text)
+            DebugLogger.shared.log("[App] Buffered insertion (\(text.count) chars): \(result)")
+        }
+
         isFlushingBuffer = false
     }
 
@@ -289,6 +308,12 @@ class AppViewModel: ObservableObject {
         var streamFailed = false
         var isFirstChunk = true
 
+        // Tag stripping state for streaming
+        var tagBuffer = ""
+        var isOpenTagStripped = false
+        let openTag = "<transcription>"
+        let closeTag = "</transcription>"
+
         // Reset insertion buffer
         insertionBuffer = ""
         isFlushingBuffer = false
@@ -313,13 +338,45 @@ class AppViewModel: ObservableObject {
                 fullResponse += chunk
                 recordingOverlay.bumpStreamingProgress()
 
-                if usePanel {
-                    textEditorPanel.appendStreamingText(chunk)
+                // Strip opening <transcription> tag from stream
+                var processedChunk: String
+                if isOpenTagStripped {
+                    processedChunk = chunk
                 } else {
-                    // Buffer the chunk instead of inserting immediately
-                    insertionBuffer += chunk
+                    tagBuffer += chunk
+                    if tagBuffer.hasPrefix(openTag) && tagBuffer.count >= openTag.count {
+                        isOpenTagStripped = true
+                        processedChunk = String(tagBuffer.dropFirst(openTag.count))
+                        if processedChunk.hasPrefix("\n") { processedChunk = String(processedChunk.dropFirst()) }
+                        tagBuffer = ""
+                    } else if openTag.hasPrefix(tagBuffer) {
+                        continue // Still buffering, could be partial tag
+                    } else {
+                        // Not a tag, flush buffer as-is
+                        isOpenTagStripped = true
+                        processedChunk = tagBuffer
+                        tagBuffer = ""
+                    }
+                }
+
+                if !processedChunk.isEmpty {
+                    if usePanel {
+                        textEditorPanel.appendStreamingText(processedChunk)
+                    } else {
+                        insertionBuffer += processedChunk
+                    }
                 }
             }
+
+            // Flush any remaining tag buffer
+            if !tagBuffer.isEmpty {
+                if usePanel {
+                    textEditorPanel.appendStreamingText(tagBuffer)
+                } else {
+                    insertionBuffer += tagBuffer
+                }
+            }
+
             DebugLogger.shared.log("[App] Multimodal stream completed, total: \"\(fullResponse.prefix(100))\"")
         } catch {
             DebugLogger.shared.log("[App] Multimodal API error: \(error)")
@@ -329,14 +386,28 @@ class AppViewModel: ObservableObject {
         // Stop flush task and drain remaining buffer
         flushTask?.cancel()
         if !insertionBuffer.isEmpty {
-            let remaining = insertionBuffer
+            var remaining = insertionBuffer
             insertionBuffer = ""
             isFlushingBuffer = false
-            let result = await textInsertionService.insertText(remaining)
-            DebugLogger.shared.log("[App] Final buffer flush (\(remaining.count) chars): \(result)")
+            // Strip closing transcription tag from final buffer
+            if remaining.contains(closeTag) {
+                remaining = remaining.replacingOccurrences(of: closeTag, with: "")
+            }
+            remaining = remaining.trimmingCharacters(in: .newlines)
+            if !remaining.isEmpty {
+                let result = await textInsertionService.insertText(remaining)
+                DebugLogger.shared.log("[App] Final buffer flush (\(remaining.count) chars): \(result)")
+            }
         }
 
+        // Strip transcription tags from full response
+        fullResponse = MultimodalService.stripTranscriptionTags(fullResponse)
         currentFullResponse = fullResponse
+
+        // Update panel text with cleaned content (strip any closing tag)
+        if usePanel {
+            textEditorPanel.textProvider.editableText = fullResponse
+        }
 
         recordingOverlay.finishProgress()
         try? await Task.sleep(nanoseconds: 200_000_000)

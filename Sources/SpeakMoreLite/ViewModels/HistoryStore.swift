@@ -216,6 +216,10 @@ class HistoryStore: ObservableObject {
             }
         }
 
+        // Strip transcription tags from response
+        fullText = MultimodalService.stripTranscriptionTags(fullText)
+        reRecognizingText = fullText
+
         // Save as TranscriptionResult
         let result = TranscriptionResult(context: context)
         result.id = UUID()

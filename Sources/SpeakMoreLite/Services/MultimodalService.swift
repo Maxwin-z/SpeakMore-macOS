@@ -29,6 +29,20 @@ class MultimodalService {
         }
     }
 
+    // MARK: - Response Processing
+
+    /// Strip `<transcription>` tags from model output, returning only the inner content.
+    static func stripTranscriptionTags(_ text: String) -> String {
+        var result = text
+        if let range = result.range(of: "<transcription>") {
+            result = String(result[range.upperBound...])
+        }
+        if let range = result.range(of: "</transcription>", options: .backwards) {
+            result = String(result[..<range.lowerBound])
+        }
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     // MARK: - Audio Encoding
 
     static func encodeAudioToBase64WAV(samples: [Float]) -> String {

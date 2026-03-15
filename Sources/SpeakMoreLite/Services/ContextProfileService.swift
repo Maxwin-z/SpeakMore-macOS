@@ -102,8 +102,10 @@ class ContextProfileService: ObservableObject {
     ) -> String {
         var sections: [String] = []
 
-        sections.append(baseInstruction)
+        // Part 1: Role declaration (fixed)
+        sections.append(L("prompt.role"))
 
+        // Part 2: Context reference (for error correction only)
         var contextSections: [String] = []
 
         let sep = L("prompt.separator")
@@ -152,6 +154,12 @@ class ContextProfileService: ObservableObject {
             sections.append(contentsOf: contextSections)
         }
 
+        // Part 3: Transcription style (user-configured)
+        sections.append("\(L("prompt.style_header"))\n\(baseInstruction)")
+
+        // Part 4: Output format (fixed)
+        sections.append(L("prompt.output_format"))
+
         return sections.joined(separator: "\n\n")
     }
 
@@ -176,10 +184,10 @@ class ContextProfileService: ObservableObject {
     ) -> String {
         var sections: [String] = []
 
-        // Base instruction (user-configured) — always included
-        sections.append(baseInstruction)
+        // Part 1: Role declaration (fixed)
+        sections.append(L("prompt.role"))
 
-        // Build context sections by priority (high → low)
+        // Part 2: Context reference (for error correction only)
         var contextSections: [String] = []
 
         let sep = L("prompt.separator")
@@ -230,15 +238,20 @@ class ContextProfileService: ObservableObject {
             }
         }
 
-        // App-specific prompt override — always included
-        if let appPrompt = appPrompt, !appPrompt.isEmpty {
-            contextSections.append("\(L("prompt.app_specific_header"))\n\(appPrompt)")
-        }
-
         if !contextSections.isEmpty {
             sections.append(L("prompt.context_intro"))
             sections.append(contentsOf: contextSections)
         }
+
+        // Part 3: Transcription style (user-configured)
+        var styleSection = "\(L("prompt.style_header"))\n\(baseInstruction)"
+        if let appPrompt = appPrompt, !appPrompt.isEmpty {
+            styleSection += "\n\n\(L("prompt.app_specific_header"))\n\(appPrompt)"
+        }
+        sections.append(styleSection)
+
+        // Part 4: Output format (fixed)
+        sections.append(L("prompt.output_format"))
 
         return sections.joined(separator: "\n\n")
     }
