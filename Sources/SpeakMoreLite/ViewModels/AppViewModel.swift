@@ -648,6 +648,10 @@ class AppViewModel: ObservableObject {
                 },
                 onEdit: { [weak self] recording in
                     self?.handlePopoverEdit(recording: recording)
+                },
+                onViewAll: { [weak self] in
+                    self?.historyPopoverPanel.hideAnimated()
+                    self?.openHistoryInMainWindow()
                 }
             )
         }

@@ -36,7 +36,8 @@ class HistoryPopoverPanel: NSPanel {
 
     func showRelativeTo(widgetFrame: NSRect, recordings: [Recording],
                         onCopy: @escaping (Recording) -> Void,
-                        onEdit: @escaping (Recording) -> Void) {
+                        onEdit: @escaping (Recording) -> Void,
+                        onViewAll: @escaping () -> Void) {
         self.widgetFrame = widgetFrame
 
         let recentRecordings = Array(recordings.prefix(5))
@@ -44,15 +45,17 @@ class HistoryPopoverPanel: NSPanel {
         let content = HistoryPopoverContent(
             recordings: recentRecordings,
             onCopy: onCopy,
-            onEdit: onEdit
+            onEdit: onEdit,
+            onViewAll: onViewAll
         )
         let hostingView = TransparentHostingView(rootView: content)
         contentView = hostingView
 
         let itemHeight: CGFloat = 68
+        let footerHeight: CGFloat = recentRecordings.isEmpty ? 0 : 41 // button + divider
         let contentHeight: CGFloat = recentRecordings.isEmpty
             ? 80
-            : CGFloat(recentRecordings.count) * itemHeight + 16
+            : CGFloat(recentRecordings.count) * itemHeight + 16 + footerHeight
 
         let panelHeight = min(contentHeight, popoverMaxHeight)
         setContentSize(NSSize(width: popoverWidth, height: panelHeight))
@@ -131,6 +134,7 @@ struct HistoryPopoverContent: View {
     let recordings: [Recording]
     let onCopy: (Recording) -> Void
     let onEdit: (Recording) -> Void
+    let onViewAll: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -154,6 +158,23 @@ struct HistoryPopoverContent: View {
                     }
                     .padding(.vertical, 8)
                 }
+
+                Divider()
+                    .background(Color.white.opacity(0.08))
+
+                Button(action: onViewAll) {
+                    HStack(spacing: 4) {
+                        Text(L("popover.view_all"))
+                            .font(.system(size: 12))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
         .background(

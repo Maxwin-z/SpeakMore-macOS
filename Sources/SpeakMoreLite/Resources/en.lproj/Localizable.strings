@@ -134,6 +134,7 @@
 "overlay.click_edit" = "Click to edit";
 "panel.receiving" = "Receiving...";
 "popover.no_history" = "No history";
+"popover.view_all" = "View All History";
 
 /* Provider Names */
 "provider.dashscope" = "Tongyi Qianwen (DashScope)";

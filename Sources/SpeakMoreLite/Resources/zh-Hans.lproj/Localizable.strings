@@ -134,6 +134,7 @@
 "overlay.click_edit" = "点击编辑";
 "panel.receiving" = "接收中...";
 "popover.no_history" = "暂无历史记录";
+"popover.view_all" = "查看完整记录";
 
 /* Provider Names */
 "provider.dashscope" = "通义千问 (DashScope)";
