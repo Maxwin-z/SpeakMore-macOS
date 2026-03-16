@@ -72,6 +72,7 @@ class AppViewModel: ObservableObject {
     // Buffered insertion: accumulate SSE chunks and flush in batches
     private var insertionBuffer = ""
     private var isFlushingBuffer = false
+    private var streamingTask: Task<Void, Never>?
 
     init() {
         NSLog("[AppViewModel] init() called")
@@ -208,12 +209,24 @@ class AppViewModel: ObservableObject {
         }
 
         state = .transcribing
-        recordingOverlay.showTranscribing()
+        recordingOverlay.showTranscribing(duration: lastRecordingDuration, onCancel: { [weak self] in
+            Task { @MainActor in self?.cancelTranscription() }
+        })
 
         DebugLogger.shared.log("[App] Using multimodal transcription for \(samples.count) samples...")
-        Task {
+        streamingTask = Task {
             await streamMultimodalResponse(samples: samples)
         }
+    }
+
+    private func cancelTranscription() {
+        DebugLogger.shared.log("[App] User cancelled transcription")
+        streamingTask?.cancel()
+        streamingTask = nil
+        recordingOverlay.hideAnimated()
+        textEditorPanel.hideAnimated()
+        textInsertionService.clearCapturedElement()
+        state = .idle
     }
 
     // MARK: - Buffered Insertion
@@ -250,6 +263,7 @@ class AppViewModel: ObservableObject {
     // MARK: - Multimodal Transcription
 
     private func streamMultimodalResponse(samples: [Float]) async {
+        guard !Task.isCancelled else { return }
         state = .inserting
         currentFullResponse = ""
         DebugLogger.shared.log("[App] State → inserting (multimodal streaming)")
@@ -412,6 +426,14 @@ class AppViewModel: ObservableObject {
         recordingOverlay.finishProgress()
         try? await Task.sleep(nanoseconds: 200_000_000)
 
+        // Early exit if cancelled by user
+        guard !Task.isCancelled else {
+            flushTask?.cancel()
+            if usePanel { textEditorPanel.hideAnimated() }
+            textInsertionService.clearCapturedElement()
+            return
+        }
+
         // Record utterance for context profiling
         if !fullResponse.isEmpty {
             contextProfileService.recordUtterance(
@@ -440,8 +462,18 @@ class AppViewModel: ObservableObject {
 
         if streamFailed || fullResponse.isEmpty {
             if usePanel { textEditorPanel.hideAnimated() }
-            recordingOverlay.hideAnimated()
             textInsertionService.clearCapturedElement()
+
+            if lastRecordingDuration > 3 {
+                // Show failure capsule with retry hint
+                recordingOverlay.showTranscriptionFailed(onClicked: { [weak self] in
+                    Task { @MainActor in
+                        self?.openHistoryInMainWindow()
+                    }
+                })
+            } else {
+                recordingOverlay.hideAnimated()
+            }
             state = .idle
             return
         }
@@ -631,6 +663,20 @@ class AppViewModel: ObservableObject {
     private func handlePopoverEdit(recording: Recording) {
         historyPopoverPanel.hideAnimated()
         showTextEditorForHistory(recording: recording)
+    }
+
+    private func openHistoryInMainWindow() {
+        recordingOverlay.hideAnimated()
+        // Bring main window to front
+        for window in NSApp.windows {
+            if window.identifier?.rawValue == "main-window" || window.title == "SpeakMore Lite" {
+                window.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+                break
+            }
+        }
+        // Switch to history tab
+        NotificationCenter.default.post(name: .openHistoryTab, object: nil)
     }
 
     private func showTextEditorForHistory(recording: Recording) {

@@ -127,6 +127,10 @@
 
 /* Overlay & Panels */
 "overlay.transcribing" = "Transcribing...";
+"overlay.transcribing_duration_fmt" = "Audio %@";
+"overlay.hover_to_cancel" = "Hover to cancel";
+"overlay.cancel_transcription" = "Cancel";
+"overlay.transcription_failed" = "Failed, retry in History";
 "overlay.click_edit" = "Click to edit";
 "panel.receiving" = "Receiving...";
 "popover.no_history" = "No history";

@@ -27,5 +27,8 @@ struct MainWindowView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .environmentObject(appViewModel)
+        .onReceive(NotificationCenter.default.publisher(for: .openHistoryTab)) { _ in
+            navigation.selectedTab = .history
+        }
     }
 }

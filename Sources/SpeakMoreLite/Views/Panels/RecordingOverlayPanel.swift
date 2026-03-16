@@ -30,17 +30,21 @@ class AudioLevelProvider: ObservableObject {
     @Published var level: Float = 0
 }
 
-enum OverlayMode {
+enum OverlayMode: Equatable {
     case recording
     case transcribing
     case loadingHint(String)
     case completed
+    case transcriptionFailed
 }
 
 class OverlayStateProvider: ObservableObject {
     @Published var mode: OverlayMode = .recording
     @Published var transcriptionProgress: Double = 0
+    @Published var audioDuration: TimeInterval = 0
     var onCompletedTapped: (() -> Void)?
+    var onCancelTapped: (() -> Void)?
+    var onFailedTapped: (() -> Void)?
 }
 
 class RecordingOverlayPanel: NSPanel {
@@ -112,10 +116,13 @@ class RecordingOverlayPanel: NSPanel {
         }
     }
 
-    func showTranscribing() {
+    func showTranscribing(duration: TimeInterval, onCancel: @escaping () -> Void) {
         overlayState.mode = .transcribing
         overlayState.transcriptionProgress = 0
+        overlayState.audioDuration = duration
+        overlayState.onCancelTapped = onCancel
         audioLevelProvider.level = 0
+        ignoresMouseEvents = false
         startProgressTimer(cap: 0.6, speed: 0.015)
     }
 
@@ -155,6 +162,29 @@ class RecordingOverlayPanel: NSPanel {
         DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: workItem)
     }
 
+    func showTranscriptionFailed(onClicked: @escaping () -> Void) {
+        stopProgressTimer()
+        overlayState.mode = .transcriptionFailed
+        overlayState.transcriptionProgress = 0
+        overlayState.onFailedTapped = onClicked
+        ignoresMouseEvents = false
+
+        let failedWidth: CGFloat = 260
+        guard let screen = NSScreen.main else { return }
+        let screenFrame = screen.visibleFrame
+        let newX = screenFrame.midX - failedWidth / 2
+        let y = screenFrame.origin.y + 48
+        setContentSize(NSSize(width: failedWidth, height: capsuleHeight))
+        setFrameOrigin(NSPoint(x: newX, y: y))
+
+        hintDismissWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.hideAnimated()
+        }
+        hintDismissWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: workItem)
+    }
+
     func showLoadingHint(_ message: String) {
         stopProgressTimer()
         overlayState.mode = .loadingHint(message)
@@ -191,6 +221,8 @@ class RecordingOverlayPanel: NSPanel {
         stopProgressTimer()
         ignoresMouseEvents = true
         overlayState.onCompletedTapped = nil
+        overlayState.onCancelTapped = nil
+        overlayState.onFailedTapped = nil
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.15
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
@@ -199,6 +231,7 @@ class RecordingOverlayPanel: NSPanel {
             self?.orderOut(nil)
             self?.audioLevelProvider.level = 0
             self?.overlayState.transcriptionProgress = 0
+            self?.overlayState.audioDuration = 0
             self?.overlayState.mode = .recording
         })
     }
@@ -227,13 +260,17 @@ class RecordingOverlayPanel: NSPanel {
 struct RecordingOverlayContent: View {
     @ObservedObject var audioLevel: AudioLevelProvider
     @ObservedObject var overlayState: OverlayStateProvider
+    @State private var isTranscribingHovered = false
 
     private let defaultWidth: CGFloat = 120
     private let capsuleHeight: CGFloat = 36
 
     private var capsuleWidth: CGFloat {
-        if case .loadingHint = overlayState.mode { return 200 }
-        return defaultWidth
+        switch overlayState.mode {
+        case .loadingHint: return 200
+        case .transcriptionFailed: return 260
+        default: return defaultWidth
+        }
     }
 
     var body: some View {
@@ -249,21 +286,36 @@ struct RecordingOverlayContent: View {
             case .recording:
                 WaveformView(level: CGFloat(audioLevel.level))
             case .transcribing:
-                TranscribingView(progress: overlayState.transcriptionProgress)
+                TranscribingView(
+                    progress: overlayState.transcriptionProgress,
+                    audioDuration: overlayState.audioDuration,
+                    isHovering: $isTranscribingHovered
+                )
             case .loadingHint(let message):
                 LoadingHintView(message: message)
             case .completed:
                 CompletedView()
+            case .transcriptionFailed:
+                TranscriptionFailedView()
             }
         }
         .frame(width: capsuleWidth, height: capsuleHeight)
         .contentShape(Capsule(style: .continuous))
         .onTapGesture {
-            if case .completed = overlayState.mode {
+            switch overlayState.mode {
+            case .completed:
                 overlayState.onCompletedTapped?()
+            case .transcriptionFailed:
+                overlayState.onFailedTapped?()
+            case .transcribing:
+                if isTranscribingHovered {
+                    overlayState.onCancelTapped?()
+                }
+            default:
+                break
             }
         }
-        .animation(.easeInOut(duration: 0.15), value: capsuleWidth)
+        .animation(.easeInOut(duration: 0.25), value: capsuleWidth)
     }
 }
 
@@ -360,6 +412,25 @@ struct WaveformView: View {
 
 struct TranscribingView: View {
     let progress: Double
+    let audioDuration: TimeInterval
+    @Binding var isHovering: Bool
+    @State private var carouselIndex = 0
+
+    private var durationText: String {
+        let seconds = Int(audioDuration)
+        if seconds >= 60 {
+            return String(format: L("duration.min_sec_fmt"), seconds / 60, seconds % 60)
+        }
+        return String(format: L("duration.sec_fmt"), seconds)
+    }
+
+    private var carouselTexts: [String] {
+        [
+            L("overlay.transcribing"),
+            String(format: L("overlay.transcribing_duration_fmt"), durationText),
+            L("overlay.hover_to_cancel")
+        ]
+    }
 
     var body: some View {
         ZStack {
@@ -370,11 +441,44 @@ struct TranscribingView: View {
                     .animation(.easeOut(duration: 0.3), value: progress)
             }
 
-            Text(L("overlay.transcribing"))
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white)
+            if isHovering {
+                HStack(spacing: 4) {
+                    Text(L("overlay.cancel_transcription"))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                .transition(.opacity)
+            } else {
+                Text(carouselTexts[carouselIndex])
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .id(carouselIndex)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .move(edge: .top).combined(with: .opacity)
+                    ))
+            }
         }
         .clipShape(Capsule(style: .continuous))
+        .contentShape(Capsule(style: .continuous))
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovering = hovering
+            }
+        }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 2_500_000_000)
+                let count = carouselTexts.count
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    carouselIndex = (carouselIndex + 1) % count
+                }
+            }
+        }
     }
 }
 
@@ -400,5 +504,20 @@ struct CompletedView: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.8))
         }
+    }
+}
+
+struct TranscriptionFailedView: View {
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 11))
+                .foregroundStyle(.orange)
+            Text(L("overlay.transcription_failed"))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.9))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 8)
     }
 }

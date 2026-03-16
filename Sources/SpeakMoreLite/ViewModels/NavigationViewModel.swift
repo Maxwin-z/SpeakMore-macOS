@@ -1,5 +1,9 @@
 import Foundation
 
+extension Notification.Name {
+    static let openHistoryTab = Notification.Name("SpeakMore.openHistoryTab")
+}
+
 enum SidebarTab: String, CaseIterable, Identifiable {
     case home
     case history
