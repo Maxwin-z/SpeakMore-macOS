@@ -6,9 +6,9 @@ struct PromptsScreen: View {
     @ObservedObject private var lang = LanguageManager.shared
     @State private var newTerm = ""
     @State private var isAddingAppPrompt = false
-    @State private var newAppName = ""
-    @State private var newAppBundleId = ""
-    @State private var newAppPrompt = ""
+    @State private var selectedApp: InstalledApp? = nil
+    @State private var newAppPromptTags: [String] = []
+    @State private var newAppTagInput = ""
     @State private var editingBaseInstruction = ""
     @State private var selectedTemplate: BaseInstructionTemplate? = nil
 
@@ -213,8 +213,8 @@ struct PromptsScreen: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 8)
                 } else {
-                    ForEach(promptStore.config.appPrompts) { appPrompt in
-                        AppPromptRow(appPrompt: appPrompt) {
+                    ForEach($promptStore.config.appPrompts) { $appPrompt in
+                        AppPromptRow(appPrompt: $appPrompt) {
                             if let idx = promptStore.config.appPrompts.firstIndex(where: { $0.id == appPrompt.id }) {
                                 promptStore.config.appPrompts.remove(at: idx)
                             }
@@ -225,43 +225,84 @@ struct PromptsScreen: View {
                 Divider()
 
                 // Add new app prompt
-                if isAddingAppPrompt {
+                if isAddingAppPrompt, let app = selectedApp {
+                    // Step 2: Enter prompt tags for selected app
                     VStack(alignment: .leading, spacing: 8) {
-                        TextField(lang.s("prompts.app_name"), text: $newAppName)
-                            .textFieldStyle(.roundedBorder)
-                        TextField(lang.s("prompts.bundle_id"), text: $newAppBundleId)
-                            .textFieldStyle(.roundedBorder)
-                            .font(.system(.body, design: .monospaced))
-                        TextField(lang.s("prompts.prompt_content"), text: $newAppPrompt)
-                            .textFieldStyle(.roundedBorder)
-
-                        HStack {
-                            Button(lang.s("prompts.cancel")) {
-                                isAddingAppPrompt = false
-                                resetNewAppFields()
+                            HStack(spacing: 8) {
+                                Image(nsImage: app.icon)
+                                    .resizable()
+                                    .frame(width: 24, height: 24)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(app.name)
+                                        .font(.callout.weight(.medium))
+                                    Text(app.bundleId)
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                Spacer()
+                                Button {
+                                    selectedApp = nil
+                                } label: {
+                                    Text(lang.s("prompts.change_app"))
+                                        .font(.caption)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
                             }
-                            .buttonStyle(.bordered)
 
-                            Button(lang.s("prompts.add")) {
-                                let prompt = AppPrompt(
-                                    appName: newAppName,
-                                    appBundleId: newAppBundleId.isEmpty ? nil : newAppBundleId,
-                                    prompt: newAppPrompt
-                                )
-                                promptStore.addAppPrompt(prompt)
-                                isAddingAppPrompt = false
-                                resetNewAppFields()
+                            // Tags already added
+                            if !newAppPromptTags.isEmpty {
+                                FlowLayout(spacing: 6) {
+                                    ForEach(newAppPromptTags, id: \.self) { tag in
+                                        PromptTag(tag: tag) {
+                                            newAppPromptTags.removeAll { $0 == tag }
+                                        }
+                                    }
+                                }
                             }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(newAppName.isEmpty || newAppPrompt.isEmpty)
+
+                            // Input for new tag
+                            HStack(spacing: 8) {
+                                TextField(lang.s("prompts.enter_prompt_tag"), text: $newAppTagInput)
+                                    .textFieldStyle(.roundedBorder)
+                                    .font(.caption)
+                                    .onSubmit { addNewAppTag() }
+
+                                Button(lang.s("prompts.add")) { addNewAppTag() }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.small)
+                                    .disabled(newAppTagInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                            }
+
+                            HStack {
+                                Button(lang.s("prompts.cancel")) {
+                                    isAddingAppPrompt = false
+                                    resetNewAppFields()
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button(lang.s("prompts.done")) {
+                                    let prompt = AppPrompt(
+                                        appName: app.name,
+                                        appBundleId: app.bundleId,
+                                        prompts: newAppPromptTags
+                                    )
+                                    promptStore.addAppPrompt(prompt)
+                                    isAddingAppPrompt = false
+                                    resetNewAppFields()
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(newAppPromptTags.isEmpty)
+                            }
                         }
-                    }
                     .padding(12)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .fill(.background.secondary)
                     )
-                } else {
+                }
+
+                if !isAddingAppPrompt || selectedApp == nil {
                     Button {
                         isAddingAppPrompt = true
                     } label: {
@@ -269,6 +310,21 @@ struct PromptsScreen: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .popover(isPresented: Binding(
+                        get: { isAddingAppPrompt && selectedApp == nil },
+                        set: { if !$0 { isAddingAppPrompt = false; resetNewAppFields() } }
+                    ), arrowEdge: .bottom) {
+                        AppPickerView(
+                            existingBundleIds: Set(promptStore.config.appPrompts.compactMap(\.appBundleId)),
+                            onSelect: { app in
+                                selectedApp = app
+                            },
+                            onCancel: {
+                                isAddingAppPrompt = false
+                                resetNewAppFields()
+                            }
+                        )
+                    }
                 }
             }
         } label: {
@@ -284,9 +340,16 @@ struct PromptsScreen: View {
     }
 
     private func resetNewAppFields() {
-        newAppName = ""
-        newAppBundleId = ""
-        newAppPrompt = ""
+        selectedApp = nil
+        newAppPromptTags = []
+        newAppTagInput = ""
+    }
+
+    private func addNewAppTag() {
+        let trimmed = newAppTagInput.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, !newAppPromptTags.contains(trimmed) else { return }
+        newAppPromptTags.append(trimmed)
+        newAppTagInput = ""
     }
 }
 
@@ -324,38 +387,217 @@ private struct GlossaryTag: View {
 // MARK: - App Prompt Row
 
 private struct AppPromptRow: View {
-    let appPrompt: AppPrompt
+    @Binding var appPrompt: AppPrompt
     let onDelete: () -> Void
 
+    @ObservedObject private var lang = LanguageManager.shared
+    @State private var newTag = ""
+
+    private var appIcon: NSImage? {
+        guard let bundleId = appPrompt.appBundleId,
+              let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) else {
+            return nil
+        }
+        return NSWorkspace.shared.icon(forFile: url.path)
+    }
+
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(appPrompt.appName)
-                    .font(.callout.weight(.medium))
-                if let bundleId = appPrompt.appBundleId {
-                    Text(bundleId)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
+                if let icon = appIcon {
+                    Image(nsImage: icon)
+                        .resizable()
+                        .frame(width: 28, height: 28)
                 }
-                Text(appPrompt.prompt)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(appPrompt.appName)
+                        .font(.callout.weight(.medium))
+                    if let bundleId = appPrompt.appBundleId {
+                        Text(bundleId)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+
+                Spacer()
+
+                Button(role: .destructive, action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
             }
 
-            Spacer()
-
-            Button(role: .destructive, action: onDelete) {
-                Image(systemName: "trash")
-                    .font(.caption)
+            // Prompt tags
+            if !appPrompt.prompts.isEmpty {
+                FlowLayout(spacing: 6) {
+                    ForEach(appPrompt.prompts, id: \.self) { tag in
+                        PromptTag(tag: tag) {
+                            appPrompt.prompts.removeAll { $0 == tag }
+                        }
+                    }
+                }
             }
-            .buttonStyle(.borderless)
+
+            // Add new tag
+            HStack(spacing: 8) {
+                TextField(lang.s("prompts.enter_prompt_tag"), text: $newTag)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.caption)
+                    .onSubmit { addTag() }
+
+                Button(lang.s("prompts.add")) { addTag() }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(newTag.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
         }
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(.background.secondary)
         )
+    }
+
+    private func addTag() {
+        let trimmed = newTag.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, !appPrompt.prompts.contains(trimmed) else { return }
+        appPrompt.prompts.append(trimmed)
+        newTag = ""
+    }
+}
+
+// MARK: - Prompt Tag
+
+private struct PromptTag: View {
+    let tag: String
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(tag)
+                .font(.caption)
+
+            Button(action: onDelete) {
+                Image(systemName: "xmark")
+                    .font(.caption2.weight(.bold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color.accentColor.opacity(0.1))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Color.accentColor.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - App Picker View
+
+private struct AppPickerView: View {
+    let existingBundleIds: Set<String>
+    let onSelect: (InstalledApp) -> Void
+    let onCancel: () -> Void
+
+    @StateObject private var scanner = InstalledAppScanner()
+    @ObservedObject private var lang = LanguageManager.shared
+    @State private var searchText = ""
+
+    private var filteredApps: [InstalledApp] {
+        let available = scanner.apps.filter { !existingBundleIds.contains($0.bundleId) }
+        if searchText.isEmpty { return available }
+        let query = searchText.lowercased()
+        return available.filter {
+            $0.name.lowercased().contains(query) || $0.bundleId.lowercased().contains(query)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(lang.s("prompts.select_app"))
+                .font(.callout.weight(.medium))
+
+            TextField(lang.s("prompts.search_app"), text: $searchText)
+                .textFieldStyle(.roundedBorder)
+
+            if scanner.isScanning {
+                HStack {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(lang.s("prompts.scanning_apps"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, 8)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 2) {
+                        ForEach(filteredApps) { app in
+                            AppPickerRow(app: app, onSelect: onSelect)
+                        }
+                    }
+                }
+                .frame(maxHeight: 300)
+            }
+        }
+        .padding(16)
+        .frame(width: 500, height: 420)
+        .onAppear {
+            scanner.scan()
+        }
+    }
+}
+
+// MARK: - App Picker Row
+
+private struct AppPickerRow: View {
+    let app: InstalledApp
+    let onSelect: (InstalledApp) -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button {
+            onSelect(app)
+        } label: {
+            HStack(spacing: 8) {
+                Image(nsImage: app.icon)
+                    .resizable()
+                    .frame(width: 24, height: 24)
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 4) {
+                        Text(app.name)
+                            .font(.callout)
+                        if app.isRunning {
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 6, height: 6)
+                        }
+                    }
+                    Text(app.bundleId)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer()
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(isHovered ? Color.accentColor.opacity(0.08) : .clear)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
     }
 }
 

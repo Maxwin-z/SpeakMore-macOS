@@ -83,6 +83,12 @@
 "prompts.prompt_content" = "提示词内容";
 "prompts.cancel" = "取消";
 "prompts.add_app_prompt" = "添加应用提示词";
+"prompts.select_app" = "选择应用";
+"prompts.search_app" = "搜索应用…";
+"prompts.scanning_apps" = "正在扫描已安装应用…";
+"prompts.change_app" = "更换";
+"prompts.enter_prompt_tag" = "输入提示词…";
+"prompts.done" = "完成";
 
 /* History Screen */
 "history.recordings" = "录音记录";

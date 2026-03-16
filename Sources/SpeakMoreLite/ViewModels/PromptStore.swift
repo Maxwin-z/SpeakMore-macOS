@@ -46,8 +46,8 @@ class PromptStore: ObservableObject {
     func resolveAppPrompt(forApp bundleId: String?) -> String? {
         if let bundleId = bundleId,
            let appPrompt = config.appPrompts.first(where: { $0.appBundleId == bundleId }),
-           !appPrompt.prompt.isEmpty {
-            return appPrompt.prompt
+           !appPrompt.prompts.isEmpty {
+            return appPrompt.promptText
         }
         return nil
     }

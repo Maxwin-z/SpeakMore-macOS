@@ -83,6 +83,12 @@
 "prompts.prompt_content" = "Prompt Content";
 "prompts.cancel" = "Cancel";
 "prompts.add_app_prompt" = "Add App Prompt";
+"prompts.select_app" = "Select App";
+"prompts.search_app" = "Search apps…";
+"prompts.scanning_apps" = "Scanning installed apps…";
+"prompts.change_app" = "Change";
+"prompts.enter_prompt_tag" = "Enter prompt…";
+"prompts.done" = "Done";
 
 /* History Screen */
 "history.recordings" = "Recordings";

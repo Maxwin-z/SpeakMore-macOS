@@ -93,12 +93,45 @@ struct AppPrompt: Codable, Equatable, Identifiable {
     let id: UUID
     var appName: String
     var appBundleId: String?
-    var prompt: String
+    var prompts: [String]
 
-    init(id: UUID = UUID(), appName: String, appBundleId: String? = nil, prompt: String) {
+    /// Joined text used as the actual prompt sent to the model.
+    var promptText: String {
+        prompts.joined(separator: "；")
+    }
+
+    init(id: UUID = UUID(), appName: String, appBundleId: String? = nil, prompts: [String]) {
         self.id = id
         self.appName = appName
         self.appBundleId = appBundleId
-        self.prompt = prompt
+        self.prompts = prompts
+    }
+
+    // Migration: decode legacy single "prompt" string into [String] array
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        appName = try container.decode(String.self, forKey: .appName)
+        appBundleId = try container.decodeIfPresent(String.self, forKey: .appBundleId)
+        if let array = try? container.decode([String].self, forKey: .prompts) {
+            prompts = array
+        } else if let legacy = try? container.decode(String.self, forKey: .legacyPrompt) {
+            prompts = legacy.isEmpty ? [] : [legacy]
+        } else {
+            prompts = []
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, appName, appBundleId, prompts
+        case legacyPrompt = "prompt"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(appName, forKey: .appName)
+        try container.encodeIfPresent(appBundleId, forKey: .appBundleId)
+        try container.encode(prompts, forKey: .prompts)
     }
 }
