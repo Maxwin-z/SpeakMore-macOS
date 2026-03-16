@@ -156,11 +156,6 @@ class TextInsertionService {
             return .noTextFieldFocused
         }
 
-        var axValueBefore: AnyObject?
-        AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute as CFString, &axValueBefore)
-        let canReadAXValue = (axValueBefore as? String) != nil
-        let lengthBefore = (axValueBefore as? String)?.count ?? 0
-
         // Layer 1: Accessibility API
         let axResult = tryAccessibilityInsertion(text, element: focusedElement)
         switch axResult {
@@ -172,20 +167,12 @@ class TextInsertionService {
         }
 
         // Layer 2: CGEvent keyboard simulation
+        // Trust CGEvent once events are posted – AX value verification is unreliable
+        // for terminal emulators (iTerm2, Terminal.app) and causes false negatives
+        // that lead to text re-enqueue and duplicate insertion during streaming.
         if tryCGEventInsertion(text) {
-            if canReadAXValue {
-                usleep(50_000)
-                var axValueAfter: AnyObject?
-                AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute as CFString, &axValueAfter)
-                let lengthAfter = (axValueAfter as? String)?.count ?? 0
-                if lengthAfter > lengthBefore {
-                    totalInsertedCharCount += text.count
-                    return .insertedViaCGEvent
-                }
-            } else {
-                totalInsertedCharCount += text.count
-                return .insertedViaCGEvent
-            }
+            totalInsertedCharCount += text.count
+            return .insertedViaCGEvent
         }
 
         // Layer 3: Clipboard + Cmd+V (disabled during streaming to avoid race conditions)
