@@ -127,7 +127,7 @@
 
 /* Overlay & Panels */
 "overlay.transcribing" = "正在转译...";
-"overlay.transcribing_duration_fmt" = "音频 %@";
+"overlay.transcribing_duration_fmt" = "正在转译 · %@";
 "overlay.hover_to_cancel" = "悬浮可取消";
 "overlay.cancel_transcription" = "取消转译";
 "overlay.transcription_failed" = "转译失败，请到历史记录里手动重试";

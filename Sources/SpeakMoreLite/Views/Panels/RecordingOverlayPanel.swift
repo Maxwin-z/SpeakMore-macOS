@@ -273,14 +273,19 @@ struct RecordingOverlayContent: View {
         }
     }
 
+    private var isDanger: Bool {
+        overlayState.mode == .transcribing && isTranscribingHovered
+    }
+
     var body: some View {
         ZStack {
             Capsule(style: .continuous)
-                .fill(Color(white: 0.12).opacity(0.9))
+                .fill(isDanger ? Color.red.opacity(0.7) : Color(white: 0.12).opacity(0.9))
                 .overlay(
                     Capsule(style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
+                        .strokeBorder(isDanger ? Color.red.opacity(0.9) : Color.white.opacity(0.25), lineWidth: 1)
                 )
+                .animation(.easeInOut(duration: 0.15), value: isDanger)
 
             switch overlayState.mode {
             case .recording:
@@ -426,7 +431,6 @@ struct TranscribingView: View {
 
     private var carouselTexts: [String] {
         [
-            L("overlay.transcribing"),
             String(format: L("overlay.transcribing_duration_fmt"), durationText),
             L("overlay.hover_to_cancel")
         ]
@@ -442,15 +446,10 @@ struct TranscribingView: View {
             }
 
             if isHovering {
-                HStack(spacing: 4) {
-                    Text(L("overlay.cancel_transcription"))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.9))
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-                .transition(.opacity)
+                Text(L("overlay.cancel_transcription"))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white)
+                    .transition(.opacity)
             } else {
                 Text(carouselTexts[carouselIndex])
                     .font(.system(size: 11, weight: .medium))
@@ -472,7 +471,7 @@ struct TranscribingView: View {
         }
         .task {
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 2_500_000_000)
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
                 let count = carouselTexts.count
                 withAnimation(.easeInOut(duration: 0.3)) {
                     carouselIndex = (carouselIndex + 1) % count
