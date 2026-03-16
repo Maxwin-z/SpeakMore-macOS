@@ -159,32 +159,35 @@ struct TextEditorContent: View {
 
                 Spacer()
 
-                HStack(spacing: 16) {
+                HStack(spacing: 8) {
                     Button(action: onClose) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .medium))
+                        Text(L("panel.discard"))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.white.opacity(0.6))
-                            .frame(width: 28, height: 28)
-                            .background(Circle().fill(Color.white.opacity(0.1)))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(Color.white.opacity(0.1)))
                     }
                     .buttonStyle(.plain)
                     .keyboardShortcut(.escape, modifiers: [])
 
                     Button(action: onCopy) {
-                        Image(systemName: "doc.on.doc")
-                            .font(.system(size: 13, weight: .medium))
+                        Text(L("panel.copy"))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.white.opacity(0.6))
-                            .frame(width: 28, height: 28)
-                            .background(Circle().fill(Color.white.opacity(0.1)))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(Color.white.opacity(0.1)))
                     }
                     .buttonStyle(.plain)
 
                     Button(action: onApply) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .bold))
+                        Text(L("panel.apply"))
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(Circle().fill(Color.blue))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(Color.blue))
                     }
                     .buttonStyle(.plain)
                 }

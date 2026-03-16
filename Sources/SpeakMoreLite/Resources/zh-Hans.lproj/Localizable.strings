@@ -128,11 +128,14 @@
 /* Overlay & Panels */
 "overlay.transcribing" = "正在转译...";
 "overlay.transcribing_duration_fmt" = "正在转译 · %@";
-"overlay.hover_to_cancel" = "悬浮可取消";
+"overlay.hover_to_cancel" = "点击取消";
 "overlay.cancel_transcription" = "取消转译";
 "overlay.transcription_failed" = "转译失败，请到历史记录里手动重试";
 "overlay.click_edit" = "点击编辑";
 "panel.receiving" = "接收中...";
+"panel.discard" = "关闭";
+"panel.copy" = "复制";
+"panel.apply" = "应用";
 "popover.no_history" = "暂无历史记录";
 "popover.view_all" = "查看完整记录";
 

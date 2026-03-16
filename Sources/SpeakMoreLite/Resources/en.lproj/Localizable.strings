@@ -133,6 +133,9 @@
 "overlay.transcription_failed" = "Failed, retry in History";
 "overlay.click_edit" = "Click to edit";
 "panel.receiving" = "Receiving...";
+"panel.discard" = "Close";
+"panel.copy" = "Copy";
+"panel.apply" = "Apply";
 "popover.no_history" = "No history";
 "popover.view_all" = "View All History";
 
