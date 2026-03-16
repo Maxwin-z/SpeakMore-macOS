@@ -4,6 +4,18 @@
 "nav.ai_enhance" = "AI Enhance";
 "nav.settings" = "Settings";
 
+/* Dashboard */
+"dashboard.title" = "Usage Stats";
+"dashboard.7days" = "7 Days";
+"dashboard.30days" = "30 Days";
+"dashboard.all_time" = "All Time";
+"dashboard.recordings" = "Recordings";
+"dashboard.voice_duration" = "Voice Duration";
+"dashboard.chars_recognized" = "Characters";
+"dashboard.time_saved" = "Time Saved";
+"dashboard.efficiency" = "Efficiency boost (vs. typing)";
+"dashboard.efficiency_desc" = "Estimated vs. excellent typist at 80 chars/min";
+
 /* Home Screen */
 "home.subtitle" = "Voice input for natural expression";
 "home.description" = "Hold the hotkey to start recording, release to auto-transcribe, and the result is typed directly into the focused text field.";

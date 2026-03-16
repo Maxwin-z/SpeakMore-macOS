@@ -4,6 +4,18 @@
 "nav.ai_enhance" = "AI增强";
 "nav.settings" = "设置";
 
+/* Dashboard */
+"dashboard.title" = "使用统计";
+"dashboard.7days" = "近 7 天";
+"dashboard.30days" = "近 30 天";
+"dashboard.all_time" = "全部";
+"dashboard.recordings" = "录音次数";
+"dashboard.voice_duration" = "语音时长";
+"dashboard.chars_recognized" = "识别字数";
+"dashboard.time_saved" = "节省时间";
+"dashboard.efficiency" = "效率提升（相比打字）";
+"dashboard.efficiency_desc" = "按优秀打字速度 80 字/分钟估算";
+
 /* Home Screen */
 "home.subtitle" = "语音输入，让表达更自然";
 "home.description" = "按住快捷键即可开始录音，松开后自动转写，结果直接输入到当前聚焦的文本框中。";
