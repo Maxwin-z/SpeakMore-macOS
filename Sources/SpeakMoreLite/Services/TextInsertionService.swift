@@ -136,7 +136,7 @@ class TextInsertionService {
         return false
     }
 
-    func insertText(_ text: String) async -> InsertionResult {
+    func insertText(_ text: String, allowClipboard: Bool = true) async -> InsertionResult {
         debugLog("insertText called, text=\"\(text.prefix(80))\"")
 
         let focusedElement: AXUIElement
@@ -188,7 +188,11 @@ class TextInsertionService {
             }
         }
 
-        // Layer 3: Clipboard + Cmd+V
+        // Layer 3: Clipboard + Cmd+V (disabled during streaming to avoid race conditions)
+        guard allowClipboard else {
+            debugLog("insertText: AX+CGEvent failed, clipboard fallback disabled")
+            return .failed
+        }
         let clipboardSuccess = await tryClipboardInsertion(text)
         if clipboardSuccess { totalInsertedCharCount += text.count }
         return clipboardSuccess ? .insertedViaClipboard : .failed

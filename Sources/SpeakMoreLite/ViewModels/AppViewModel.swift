@@ -253,8 +253,13 @@ class AppViewModel: ObservableObject {
         insertionBuffer = remaining
 
         if !text.isEmpty {
-            let result = await textInsertionService.insertText(text)
+            let result = await textInsertionService.insertText(text, allowClipboard: false)
             DebugLogger.shared.log("[App] Buffered insertion (\(text.count) chars): \(result)")
+            if case .failed = result {
+                // Re-enqueue for retry; final drain will use clipboard as last resort
+                insertionBuffer = text + insertionBuffer
+                DebugLogger.shared.log("[App] Re-enqueued failed chunk for final drain")
+            }
         }
 
         isFlushingBuffer = false
@@ -397,12 +402,15 @@ class AppViewModel: ObservableObject {
             streamFailed = true
         }
 
-        // Stop flush task and drain remaining buffer
+        // Stop flush task and wait for in-flight flush to complete
         flushTask?.cancel()
+        await flushTask?.value
+        isFlushingBuffer = false
+
+        // Drain remaining buffer (clipboard allowed as one-shot fallback)
         if !insertionBuffer.isEmpty {
             var remaining = insertionBuffer
             insertionBuffer = ""
-            isFlushingBuffer = false
             // Strip closing transcription tag from final buffer
             if remaining.contains(closeTag) {
                 remaining = remaining.replacingOccurrences(of: closeTag, with: "")
