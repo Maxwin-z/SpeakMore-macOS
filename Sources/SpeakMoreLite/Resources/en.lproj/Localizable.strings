@@ -206,6 +206,7 @@
 "error.invalid_response" = "API returned invalid response";
 "error.recognition_failed_fmt" = "Recognition failed: %@";
 "error.configure_api" = "Configure API first...";
+"error.no_valid_speech" = "No valid speech detected";
 
 /* Base Instruction Template Prompts */
 "template.faithful_prompt" = "Fully preserve the original meaning and expression:\n1. Remove repeated words and fragments caused by pauses.\n2. Remove filler words (such as \"um\", \"uh\", \"like\").\n3. Correct obvious slips and typos without changing the original expression.";

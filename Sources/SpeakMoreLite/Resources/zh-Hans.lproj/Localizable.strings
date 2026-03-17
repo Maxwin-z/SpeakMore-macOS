@@ -243,6 +243,7 @@
 "error.invalid_response" = "API 返回无效响应";
 "error.recognition_failed_fmt" = "识别失败: %@";
 "error.configure_api" = "请先配置 API...";
+"error.no_valid_speech" = "未识别到有效语音";
 
 /* Duration */
 "duration.min_sec_fmt" = "%d分%d秒";

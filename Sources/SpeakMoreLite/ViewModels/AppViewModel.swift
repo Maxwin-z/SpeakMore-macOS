@@ -68,6 +68,7 @@ class AppViewModel: ObservableObject {
     private var currentFullResponse: String = ""
     private var lastRecordingSamples: [Float]?
     private var lastRecordingDuration: TimeInterval = 0
+    private var peakAudioLevel: Float = 0
 
     // Buffered insertion: accumulate SSE chunks and flush in batches
     private var insertionBuffer = ""
@@ -159,6 +160,7 @@ class AppViewModel: ObservableObject {
 
     private func startRecording() {
         audioBuffer.removeAll()
+        peakAudioLevel = 0
 
         let recorder = AudioRecorderService()
         recorder.onAudioSamples = { [weak self] samples in
@@ -168,7 +170,11 @@ class AppViewModel: ObservableObject {
             self.bufferLock.unlock()
         }
         recorder.onAudioLevel = { [weak self] level in
-            Task { @MainActor in
+            guard let self = self else { return }
+            if level > self.peakAudioLevel {
+                self.peakAudioLevel = level
+            }
+            Task { @MainActor [weak self] in
                 self?.recordingOverlay.updateAudioLevel(level)
             }
         }
@@ -204,6 +210,14 @@ class AppViewModel: ObservableObject {
 
         guard !samples.isEmpty else {
             recordingOverlay.hideAnimated()
+            state = .idle
+            return
+        }
+
+        // 短录音且无明显人声，跳过转译
+        if lastRecordingDuration < 3 && peakAudioLevel < 0.01 {
+            DebugLogger.shared.log("[App] Short recording (\(String(format: "%.1f", lastRecordingDuration))s) with no voice detected (peak: \(peakAudioLevel)), skipping transcription")
+            recordingOverlay.showLoadingHint(L("error.no_valid_speech"))
             state = .idle
             return
         }
