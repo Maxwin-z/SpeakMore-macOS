@@ -17,3 +17,6 @@ build/
 .build/
 Packages/
 Package.resolved
+
+# Marketing
+marketing/
