@@ -42,9 +42,36 @@ class OverlayStateProvider: ObservableObject {
     @Published var mode: OverlayMode = .recording
     @Published var transcriptionProgress: Double = 0
     @Published var audioDuration: TimeInterval = 0
+    @Published var colorfulWaveform: Bool = UserDefaults.standard.object(forKey: "SpeakMore.colorfulWaveform") == nil
+        ? true
+        : UserDefaults.standard.bool(forKey: "SpeakMore.colorfulWaveform")
     var onCompletedTapped: (() -> Void)?
     var onCancelTapped: (() -> Void)?
     var onFailedTapped: (() -> Void)?
+
+    private var defaultsObserver: NSObjectProtocol?
+
+    init() {
+        defaultsObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            let key = "SpeakMore.colorfulWaveform"
+            let newValue = UserDefaults.standard.object(forKey: key) == nil
+                ? true
+                : UserDefaults.standard.bool(forKey: key)
+            if self.colorfulWaveform != newValue {
+                self.colorfulWaveform = newValue
+            }
+        }
+    }
+
+    deinit {
+        if let observer = defaultsObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
 }
 
 class RecordingOverlayPanel: NSPanel {
@@ -289,7 +316,7 @@ struct RecordingOverlayContent: View {
 
             switch overlayState.mode {
             case .recording:
-                WaveformView(level: CGFloat(audioLevel.level))
+                WaveformView(level: CGFloat(audioLevel.level), colorful: overlayState.colorfulWaveform)
             case .transcribing:
                 TranscribingView(
                     progress: overlayState.transcriptionProgress,
@@ -326,6 +353,7 @@ struct RecordingOverlayContent: View {
 
 struct WaveformView: View {
     let level: CGFloat
+    var colorful: Bool = true
 
     @State private var displayLevel: CGFloat = 0
 
@@ -385,19 +413,23 @@ struct WaveformView: View {
                                 amplitude: effectiveLevel * maxAmplitude * ampScale,
                                 frequency: freq, phase: time * speed)
             ctx.drawLayer { glowCtx in
-                glowCtx.addFilter(.blur(radius: 6))
-                glowCtx.fill(path, with: colorfulGradient(width: width, midY: midY, time: time, opacity: 0.4 * effectiveLevel))
+                glowCtx.addFilter(.blur(radius: colorful ? 6 : 4))
+                let glowFill: GraphicsContext.Shading = colorful
+                    ? colorfulGradient(width: width, midY: midY, time: time, opacity: 0.4 * effectiveLevel)
+                    : .color(.white.opacity(0.25 * effectiveLevel))
+                glowCtx.fill(path, with: glowFill)
             }
         }
 
-        // Draw each wave layer with colorful gradient
+        // Draw each wave layer
         for (i, (speed, freq, ampScale, opacity)) in layers.enumerated() {
             let amp = effectiveLevel * maxAmplitude * ampScale
             let path = wavePath(width: width, midY: midY,
                                 amplitude: amp, frequency: freq, phase: time * speed)
-            // Offset time per layer for color variation between layers
-            let layerTimeOffset = time + Double(i) * 0.4
-            ctx.fill(path, with: colorfulGradient(width: width, midY: midY, time: layerTimeOffset, opacity: opacity))
+            let fill: GraphicsContext.Shading = colorful
+                ? colorfulGradient(width: width, midY: midY, time: time + Double(i) * 0.4, opacity: opacity)
+                : .color(.white.opacity(opacity))
+            ctx.fill(path, with: fill)
         }
     }
 

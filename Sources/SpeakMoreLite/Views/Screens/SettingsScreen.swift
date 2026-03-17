@@ -4,6 +4,7 @@ struct SettingsScreen: View {
     @EnvironmentObject var appViewModel: AppViewModel
     @EnvironmentObject var multimodalStore: MultimodalConfigStore
     @ObservedObject private var lang = LanguageManager.shared
+    @AppStorage("SpeakMore.colorfulWaveform") private var colorfulWaveform = true
     @State private var currentHotkeyDisplay = "FN"
     @State private var isRecordingHotkey = false
     @State private var apiKeyVisible = false
@@ -17,6 +18,9 @@ struct SettingsScreen: View {
 
                 // MARK: - Language
                 languageSection
+
+                // MARK: - Appearance
+                appearanceSection
 
                 // MARK: - Permissions
                 permissionsSection
@@ -32,6 +36,16 @@ struct SettingsScreen: View {
         .onAppear {
             appViewModel.checkPermissions()
             currentHotkeyDisplay = appViewModel.currentHotkeyConfig.displayString
+        }
+    }
+
+    // MARK: - Appearance Section
+
+    private var appearanceSection: some View {
+        GroupBox {
+            Toggle(lang.s("settings.colorful_waveform"), isOn: $colorfulWaveform)
+        } label: {
+            Label(lang.s("settings.appearance"), systemImage: "paintbrush")
         }
     }
 

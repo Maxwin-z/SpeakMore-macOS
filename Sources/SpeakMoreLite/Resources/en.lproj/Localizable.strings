@@ -47,6 +47,8 @@
 "settings.open_keyboard_settings" = "Open Keyboard Settings";
 "settings.hotkey" = "Hotkey";
 "settings.hotkey_hint" = "Hold hotkey to record, release to stop";
+"settings.appearance" = "Appearance";
+"settings.colorful_waveform" = "Colorful recording waveform";
 "settings.provider" = "Provider";
 "settings.api_key_placeholder" = "Enter API Key…";
 "settings.api_endpoint" = "API Endpoint";

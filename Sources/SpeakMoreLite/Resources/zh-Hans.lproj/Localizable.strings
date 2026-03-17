@@ -47,6 +47,8 @@
 "settings.open_keyboard_settings" = "打开键盘设置";
 "settings.hotkey" = "快捷键";
 "settings.hotkey_hint" = "按住快捷键开始录音，松开结束";
+"settings.appearance" = "外观";
+"settings.colorful_waveform" = "录音波形彩色效果";
 "settings.provider" = "服务商";
 "settings.api_key_placeholder" = "输入 API Key…";
 "settings.api_endpoint" = "API 地址";
