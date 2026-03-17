@@ -344,6 +344,24 @@ struct WaveformView: View {
         }
     }
 
+    private func colorfulGradient(width: CGFloat, midY: CGFloat, time: Double, opacity: Double) -> GraphicsContext.Shading {
+        // Rotating hue offsets for animated color flow
+        let shift = time * 0.3
+        let colors: [Color] = [
+            Color(hue: fmod(0.55 + shift, 1.0), saturation: 0.85, brightness: 1.0).opacity(opacity),  // cyan-blue
+            Color(hue: fmod(0.72 + shift, 1.0), saturation: 0.80, brightness: 1.0).opacity(opacity),  // purple
+            Color(hue: fmod(0.88 + shift, 1.0), saturation: 0.85, brightness: 1.0).opacity(opacity),  // pink
+            Color(hue: fmod(0.05 + shift, 1.0), saturation: 0.90, brightness: 1.0).opacity(opacity),  // orange
+            Color(hue: fmod(0.15 + shift, 1.0), saturation: 0.85, brightness: 1.0).opacity(opacity),  // yellow-green
+            Color(hue: fmod(0.55 + shift, 1.0), saturation: 0.85, brightness: 1.0).opacity(opacity),  // back to cyan
+        ]
+        return .linearGradient(
+            Gradient(colors: colors),
+            startPoint: CGPoint(x: 0, y: midY),
+            endPoint: CGPoint(x: width, y: midY)
+        )
+    }
+
     private func drawWaveform(in ctx: GraphicsContext, size: CGSize, time: Double) {
         let midY = size.height / 2
         let width = size.width
@@ -355,9 +373,9 @@ struct WaveformView: View {
 
         // Wave layers: (speed, frequency, amplitude scale, opacity)
         let layers: [(Double, Double, Double, Double)] = [
-            (1.8, 1.2, 1.0, 0.5),
-            (2.5, 1.7, 0.7, 0.35),
-            (3.2, 2.3, 0.45, 0.2),
+            (1.8, 1.2, 1.0, 0.7),
+            (2.5, 1.7, 0.7, 0.5),
+            (3.2, 2.3, 0.45, 0.3),
         ]
 
         // Glow layer behind the main wave
@@ -367,17 +385,19 @@ struct WaveformView: View {
                                 amplitude: effectiveLevel * maxAmplitude * ampScale,
                                 frequency: freq, phase: time * speed)
             ctx.drawLayer { glowCtx in
-                glowCtx.addFilter(.blur(radius: 4))
-                glowCtx.fill(path, with: .color(.white.opacity(0.25 * effectiveLevel)))
+                glowCtx.addFilter(.blur(radius: 6))
+                glowCtx.fill(path, with: colorfulGradient(width: width, midY: midY, time: time, opacity: 0.4 * effectiveLevel))
             }
         }
 
-        // Draw each wave layer
-        for (speed, freq, ampScale, opacity) in layers {
+        // Draw each wave layer with colorful gradient
+        for (i, (speed, freq, ampScale, opacity)) in layers.enumerated() {
             let amp = effectiveLevel * maxAmplitude * ampScale
             let path = wavePath(width: width, midY: midY,
                                 amplitude: amp, frequency: freq, phase: time * speed)
-            ctx.fill(path, with: .color(.white.opacity(opacity)))
+            // Offset time per layer for color variation between layers
+            let layerTimeOffset = time + Double(i) * 0.4
+            ctx.fill(path, with: colorfulGradient(width: width, midY: midY, time: layerTimeOffset, opacity: opacity))
         }
     }
 
