@@ -122,6 +122,11 @@ class AppViewModel: ObservableObject {
                 self?.handleHotkeyUp()
             }
         }
+        hotkeyService.onHotkeyCancelled = { [weak self] in
+            Task { @MainActor in
+                self?.handleHotkeyCancelled()
+            }
+        }
     }
 
     func updateHotkey(_ config: HotkeyConfig) {
@@ -154,6 +159,20 @@ class AppViewModel: ObservableObject {
         DebugLogger.shared.log("[App] Hotkey UP: state=\(state)")
         guard state == .recording else { return }
         stopRecordingAndTranscribe()
+    }
+
+    private func handleHotkeyCancelled() {
+        DebugLogger.shared.log("[App] Hotkey CANCELLED (combo detected): state=\(state)")
+        guard state == .recording else { return }
+        audioRecorder?.stopRecording()
+        audioRecorder = nil
+        durationTimer?.invalidate()
+        durationTimer = nil
+        audioBuffer.removeAll()
+        recordingOverlay.hideAnimated()
+        textInsertionService.clearCapturedElement()
+        state = .idle
+        DebugLogger.shared.log("[App] Recording cancelled due to combo key usage")
     }
 
     // MARK: - Recording

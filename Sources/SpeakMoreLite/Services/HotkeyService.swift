@@ -28,6 +28,7 @@ class HotkeyService {
 
     var onHotkeyDown: (() -> Void)?
     var onHotkeyUp: (() -> Void)?
+    var onHotkeyCancelled: (() -> Void)?
 
     func start() {
         currentConfig = HotkeyConfig.load()
@@ -207,7 +208,10 @@ class HotkeyService {
 
     private func handleNSEventFn(_ event: NSEvent) {
         if event.type == .keyDown && isFnDown {
-            fnUsedAsModifier = true
+            if !fnUsedAsModifier {
+                fnUsedAsModifier = true
+                onHotkeyCancelled?()
+            }
             return
         }
 
@@ -232,7 +236,10 @@ class HotkeyService {
         let config = currentConfig
 
         if event.type == .keyDown && isModifierKeyDown {
-            modifierUsedAsCombo = true
+            if !modifierUsedAsCombo {
+                modifierUsedAsCombo = true
+                onHotkeyCancelled?()
+            }
             return
         }
 
@@ -245,6 +252,12 @@ class HotkeyService {
             isModifierKeyDown = true
             modifierUsedAsCombo = false
             onHotkeyDown?()
+        } else if isTargetPressed && isModifierKeyDown && event.keyCode != config.keyCode {
+            // Another modifier key pressed while hotkey modifier is held → combo
+            if !modifierUsedAsCombo {
+                modifierUsedAsCombo = true
+                onHotkeyCancelled?()
+            }
         } else if !isTargetPressed && isModifierKeyDown {
             isModifierKeyDown = false
             if !modifierUsedAsCombo {
@@ -308,7 +321,10 @@ class HotkeyService {
 
     private func handleEventFn(_ type: CGEventType, _ event: CGEvent) {
         if type == .keyDown && isFnDown {
-            fnUsedAsModifier = true
+            if !fnUsedAsModifier {
+                fnUsedAsModifier = true
+                onHotkeyCancelled?()
+            }
             return
         }
 
@@ -333,7 +349,10 @@ class HotkeyService {
         let config = currentConfig
 
         if type == .keyDown && isModifierKeyDown {
-            modifierUsedAsCombo = true
+            if !modifierUsedAsCombo {
+                modifierUsedAsCombo = true
+                onHotkeyCancelled?()
+            }
             return
         }
 
@@ -347,6 +366,12 @@ class HotkeyService {
             isModifierKeyDown = true
             modifierUsedAsCombo = false
             onHotkeyDown?()
+        } else if isTargetPressed && isModifierKeyDown && keyCode != config.keyCode {
+            // Another modifier key pressed while hotkey modifier is held → combo
+            if !modifierUsedAsCombo {
+                modifierUsedAsCombo = true
+                onHotkeyCancelled?()
+            }
         } else if !isTargetPressed && isModifierKeyDown {
             isModifierKeyDown = false
             if !modifierUsedAsCombo {
